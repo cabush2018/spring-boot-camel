@@ -1,6 +1,6 @@
 package integration.camel;
 
-public class MyBean {
+public class DirectProcessor {
     private Integer id;
     private String name;
     public Integer getId() {
