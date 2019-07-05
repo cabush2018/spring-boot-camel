@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 public class PersistenceService {
 	@PersistenceContext
 	PersistenceContext persistenceContext;
-	public void example(DirectProcessor bodyIn) {
+	public void example(PersistNode bodyIn) {
 	//	persistenceContext.
-		bodyIn.setName("Hello there..., " + bodyIn.getName());
-		bodyIn.setId(bodyIn.getId() * 10);
+		bodyIn.prop("name","Hello there..., " + bodyIn.getName());
+		bodyIn.prop("id", bodyIn.getId() * 10);
 	}
 }

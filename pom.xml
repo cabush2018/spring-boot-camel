@@ -10,7 +10,7 @@
 
 
 	<properties>
-		<camel.version>2.19.1</camel.version>
+		<camel.version>2.18.1</camel.version>
 		<spring-boot-starter.version>1.5.4.RELEASE</spring-boot-starter.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>

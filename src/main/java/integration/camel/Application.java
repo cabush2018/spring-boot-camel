@@ -15,7 +15,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 @SpringBootApplication
@@ -28,19 +27,20 @@ public class Application {
 
 	@Value("${server.port}")
 	String serverPort;
-
+    
+    @Value("${integration.api.path}")
+    String contextPath;
+ 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
 
 	@Bean
-	ServletRegistrationBean servletRegistrationBean() {
-		ServletRegistrationBean servlet = new ServletRegistrationBean(
-				new CamelHttpTransportServlet()
-				, "/*");
-		servlet.setName("Camel-servlet");
-		return servlet;
-	}
+    ServletRegistrationBean servletRegistrationBean() {
+        ServletRegistrationBean servlet = new ServletRegistrationBean(new CamelHttpTransportServlet(), contextPath+"/*");
+        servlet.setName("CamelServlet");
+        return servlet;
+    }
 
 	@Component
 	class RestApi extends RouteBuilder {
@@ -53,7 +53,7 @@ public class Application {
 
 			CamelContext context = new DefaultCamelContext();
 
-			restConfiguration()
+			restConfiguration().contextPath(contextPath) //
 					.port(serverPort)
 					.enableCORS(true)
 					.apiContextPath("/api-doc")
@@ -74,12 +74,11 @@ public class Application {
 
 			rest("/api/")
 					.id("api-route")
-					.post("/integration")
+					.post("/direct")
 					.produces(MediaType.APPLICATION_JSON)
 					.consumes(MediaType.APPLICATION_JSON)
-//                .get("/hello/{place}")
 					.bindingMode(RestBindingMode.auto)
-					.type(DirectProcessor.class)
+					.type(PersistNode.class)
 					.enableCORS(true)
 //                .outType(OutBean.class)
 					.to("direct:remoteService");
@@ -92,7 +91,7 @@ public class Application {
 					.process(new Processor() {
 						@Override
 						public void process(Exchange exchange) throws Exception {
-							DirectProcessor bodyIn = (DirectProcessor) exchange.getIn().getBody();
+							PersistNode bodyIn = (PersistNode) exchange.getIn().getBody();
 
 							persistenceService.example(bodyIn);
 
