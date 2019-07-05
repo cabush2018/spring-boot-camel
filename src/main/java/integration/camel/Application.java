@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 /*
  * Test with:
  * curl --header "Content-Type: application/json" --noproxy localhost --silent 
- * --request POST --data '{"id": 1,"name": "World"}' http://localhost:8080/camel/api/integration*
+ * --request POST --data '{"id": 1,"name": "World"}' http://localhost:8080/integration/api/direct
  * */
 public class Application {
 
@@ -57,7 +57,7 @@ public class Application {
 					.port(serverPort)
 					.enableCORS(true)
 					.apiContextPath("/api-doc")
-					.apiProperty("api.title", "Test REST API")
+					.apiProperty("api.title", "Integration API")
 					.apiProperty("api.version", "v1")
 					.apiProperty("cors", "true") // cross-site
 					.apiContextRouteId("doc-api")
