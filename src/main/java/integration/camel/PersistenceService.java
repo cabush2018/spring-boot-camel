@@ -12,7 +12,7 @@ public class PersistenceService {
 	@PersistenceContext
 	PersistenceContext persistenceContext;
 	public void example(DirectProcessor bodyIn) {
-		persistenceContext.
+	//	persistenceContext.
 		bodyIn.setName("Hello there..., " + bodyIn.getName());
 		bodyIn.setId(bodyIn.getId() * 10);
 	}
