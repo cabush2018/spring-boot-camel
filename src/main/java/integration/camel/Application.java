@@ -19,6 +19,11 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 @SpringBootApplication
+/*
+ * Test with:
+ * curl --header "Content-Type: application/json" --noproxy localhost --silent 
+ * --request POST --data '{"id": 1,"name": "World"}' http://localhost:8080/camel/api/integration*
+ * */
 public class Application {
 
 	@Value("${server.port}")
