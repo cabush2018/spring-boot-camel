@@ -93,7 +93,7 @@ public class Application {
 						public void process(Exchange exchange) throws Exception {
 							PersistNode bodyIn = (PersistNode) exchange.getIn().getBody();
 
-							persistenceService.example(bodyIn);
+							persistenceService.persist(bodyIn);
 
 							exchange.getIn().setBody(bodyIn);
 						}
