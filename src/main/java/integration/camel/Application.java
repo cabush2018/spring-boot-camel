@@ -19,33 +19,36 @@ import org.springframework.stereotype.Component;
 
 @SpringBootApplication
 /*
- * Test with:
- * curl --header "Content-Type: application/json" --noproxy localhost --silent 
- * --request POST --data '{"id": 1,"name": "World"}' http://localhost:8080/integration/api/direct
- * */
+ * Test with: curl --header "Content-Type: application/json" --noproxy localhost
+ * --request POST \ --data '{"type":"Node1","properties":{"id": 1,"name":
+ * "World"}}' \ http://localhost:8080/integration/api/direct
+ */
+
 public class Application {
 
 	@Value("${server.port}")
 	String serverPort;
-    
-    @Value("${integration.api.path}")
-    String contextPath;
- 
+
+	@Value("${integration.api.path}")
+	String contextPath;
+
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean
-    ServletRegistrationBean servletRegistrationBean() {
-        ServletRegistrationBean servlet = new ServletRegistrationBean(new CamelHttpTransportServlet(), contextPath+"/*");
-        servlet.setName("CamelServlet");
-        return servlet;
-    }
+	ServletRegistrationBean servletRegistrationBean() {
+		ServletRegistrationBean servlet = new ServletRegistrationBean(new CamelHttpTransportServlet(),
+				contextPath + "/*");
+		servlet.setName("CamelServlet");
+		return servlet;
+	}
 
 	@Component
 	class RestApi extends RouteBuilder {
-		
-		@Autowired 
+
+		@Autowired
 		PersistenceService persistenceService;
 
 		@Override
@@ -54,15 +57,10 @@ public class Application {
 			CamelContext context = new DefaultCamelContext();
 
 			restConfiguration().contextPath(contextPath) //
-					.port(serverPort)
-					.enableCORS(true)
-					.apiContextPath("/api-doc")
-					.apiProperty("api.title", "Integration API")
-					.apiProperty("api.version", "v1")
+					.port(serverPort).enableCORS(true).apiContextPath("/api-doc")
+					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
 					.apiProperty("cors", "true") // cross-site
-					.apiContextRouteId("doc-api")
-					.component("servlet")
-					.bindingMode(RestBindingMode.json)
+					.apiContextRouteId("doc-api").component("servlet").bindingMode(RestBindingMode.json)
 					.dataFormatProperty("prettyPrint", "true");
 			/**
 			 * The Rest DSL supports automatic binding json/xml contents to/from POJOs using
@@ -72,32 +70,22 @@ public class Application {
 			 * and response types.
 			 */
 
-			rest("/api/")
-					.id("api-route")
-					.post("/direct")
-					.produces(MediaType.APPLICATION_JSON)
-					.consumes(MediaType.APPLICATION_JSON)
-					.bindingMode(RestBindingMode.auto)
-					.type(PersistNode.class)
+			rest("/api/").id("api-route").post("/direct").produces(MediaType.APPLICATION_JSON)
+					.consumes(MediaType.APPLICATION_JSON).bindingMode(RestBindingMode.auto).type(PersistNode.class)
 					.enableCORS(true)
 //                .outType(OutBean.class)
 					.to("direct:remoteService");
 
-			from("direct:remoteService")
-				.routeId("direct-route")
-				.tracing()
-				.log(">>> ${body.id} - ${body.name}")
-//                .transform(basePackages = "integration")().simple("blue ${in.body.name}")                
-					.process(new Processor() {
-						@Override
-						public void process(Exchange exchange) throws Exception {
-							PersistNode bodyIn = (PersistNode) exchange.getIn().getBody();
-
-							persistenceService.persist(bodyIn);
-
-							exchange.getIn().setBody(bodyIn);
-						}
-					}).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
+			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
+					.process(this::process)
+					.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
 		}
+
+		public void process(Exchange exchange) throws Exception {
+			PersistNode in = (PersistNode) exchange.getIn().getBody();
+			persistenceService.persist(in);
+			exchange.getIn().setBody(in);
+		}
+
 	}
 }
