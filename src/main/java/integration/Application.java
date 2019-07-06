@@ -1,4 +1,4 @@
-package integration.camel;
+package integration;
 
 import javax.ws.rs.core.MediaType;
 

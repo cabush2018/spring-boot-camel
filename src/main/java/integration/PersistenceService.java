@@ -1,4 +1,4 @@
-package integration.camel;
+package integration;
 
 import java.sql.Date;
 import java.util.Map;
@@ -26,26 +26,26 @@ public class PersistenceService {
 	}
 
 	private void insert(PersistNode in) {
-		String columns = in.properties.keySet().stream().collect(Collectors.joining(","));
-		String values = in.properties.entrySet().stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
+		String columns = in.getProperties().keySet().stream().collect(Collectors.joining(","));
+		String values = in.getProperties().entrySet().stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
 				.collect(Collectors.joining(","));
-		String sqlInsert = String.format("INSERT INTO %s (%s) VALUES ( %s )", in.type, columns, values);
+		String sqlInsert = String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values);
 		Query queryInsert = em.createNativeQuery(sqlInsert);
 		queryInsert.executeUpdate();
 	}
 
 	private boolean update(PersistNode in) {
-		String pairs = in.properties.entrySet().stream()
+		String pairs = in.getProperties().entrySet().stream()
 				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
 				.collect(Collectors.joining(","));
-		String sqlUpdate = String.format("UPDATE %s SET %s", in.type, pairs);
+		String sqlUpdate = String.format("UPDATE %s SET %s", in.getType(), pairs);
 		Query queryUpdate = em.createNativeQuery(sqlUpdate);
 		boolean updated = queryUpdate.executeUpdate() > 0;
 		return updated;
 	}
 
 	private String formatSql(Object e) {
-		if(e==null) {
+		if (e == null) {
 			return "null";
 		}
 		String value;
