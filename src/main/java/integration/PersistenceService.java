@@ -48,27 +48,13 @@ public class PersistenceService {
 		if (e == null) {
 			return "null";
 		}
-		String value;
-		switch (e.getClass().getName()) {
-		case "java.lang.String":
-			value = String.format("'%s'", e);
-			break;
-		case "java.lang.Integer":
-			value = e.toString();
-			break;
-		case "java.lang.Double":
-			value = e.toString();
-			break;
-		case "java.lang.Boolean":
-			value = e.toString();
-			break;
-		case "java.sql.Date":
-		case "java.util.Date":
-			value = String.format("'%s'", ((Date) e).toString());
-			break;
-		default:
+		String value=e.toString();
+		if (e instanceof Date || e instanceof String) {
+			return String.format("'%s'", value);
+		} else if(e instanceof Number || e instanceof Boolean) {
+			return value;
+		} else {
 			throw new RuntimeException("unexpected type");
 		}
-		return value;
 	}
 }

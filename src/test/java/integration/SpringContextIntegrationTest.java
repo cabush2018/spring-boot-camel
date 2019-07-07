@@ -10,7 +10,6 @@ import integration.Application;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
-@ActiveProfiles("test")
 public class SpringContextIntegrationTest {
 
     @Test
