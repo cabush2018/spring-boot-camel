@@ -11,5 +11,6 @@ CREATE TABLE Node1 (
 	name VARCHAR(20),
 	sex CHAR(1),
 	birth DATE,
+	height decimal,
 	id INT
 ) ;
