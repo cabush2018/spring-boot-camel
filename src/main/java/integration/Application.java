@@ -4,7 +4,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.apache.camel.impl.DefaultCamelContext;
@@ -16,6 +15,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+
+import integration.persistence.PersistNode;
+import integration.persistence.PersistenceService;
 
 @SpringBootApplication
 /*
@@ -54,6 +56,7 @@ public class Application {
 		@Override
 		public void configure() {
 
+			@SuppressWarnings("unused")
 			CamelContext context = new DefaultCamelContext();
 
 			restConfiguration().contextPath(contextPath) //

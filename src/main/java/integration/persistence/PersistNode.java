@@ -1,4 +1,4 @@
-package integration;
+package integration.persistence;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,10 +6,13 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Getter;
-import lombok.Setter;
-
 public class PersistNode {
+
+	@JsonProperty
+	private String type;
+	
+	@JsonProperty
+	private Map<String, Object> properties = new HashMap<>();
 
 	public String getType() {
 		return type;
@@ -26,12 +29,6 @@ public class PersistNode {
 	public void setProperties(Map<String, Object> properties) {
 		this.properties = properties;
 	}
-
-	@JsonProperty
-	private String type;
-	
-	@JsonProperty
-	private Map<String, Object> properties = new HashMap<>();
 
 	@JsonAnySetter
 	public void prop(String k, Object v) {
