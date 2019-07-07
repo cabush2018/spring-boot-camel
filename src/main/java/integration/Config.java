@@ -23,7 +23,7 @@ public class Config {
 	private WebApplicationContext context;
 
 	@PostConstruct
-	public void process() throws Exception {
+	public void process() throws SQLException{
 		processFile("classpath:schema-dev.sql");
 		processFile("classpath:data-dev.sql");
 	}
