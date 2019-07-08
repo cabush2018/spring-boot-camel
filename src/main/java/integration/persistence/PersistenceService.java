@@ -4,10 +4,10 @@ import java.sql.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.metamodel.EntityType;
 import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
@@ -30,8 +30,10 @@ public class PersistenceService {
 	}
 
 	private boolean isMapped(Object in) {
-		//em.getEntityManagerFactory().
-		return in.getClass().getAnnotation(Entity.class) != null;
+		boolean isMapped = em. getMetamodel().getEntities().parallelStream()
+				.map(EntityType::getJavaType)
+				.anyMatch(in.getClass()::equals);
+		return isMapped;
 	}
 
 	private void persistUnmapped(PersistNode in) {
