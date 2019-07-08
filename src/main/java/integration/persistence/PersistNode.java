@@ -3,15 +3,18 @@ package integration.persistence;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
+
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+@MappedSuperclass
 public class PersistNode {
 
-	@JsonProperty
+	@JsonProperty @Transient
 	private String type;
 	
-	@JsonProperty
+	@JsonProperty @Transient
 	private Map<String, Object> properties = new HashMap<>();
 
 	public String getType() {
