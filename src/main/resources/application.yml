@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 9080
 
 # for Camel version 2.18 and below
 integration:
@@ -14,11 +14,7 @@ camel:
 # Binding health checks to a different port
 management:
   server:
-    port: 8081
+    port: 9081
   endpoints:
     enabled-by-default: false
 
-# The application configuration properties
-quickstart:
-  generateOrderPeriod: 10s
-  processOrderPeriod: 30s
