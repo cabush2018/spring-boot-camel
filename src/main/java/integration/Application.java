@@ -16,16 +16,12 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import integration.model.Concept;
 import integration.persistence.PersistNode;
 import integration.persistence.PersistenceService;
 
 @SpringBootApplication
-/*
- * Test with: curl --header "Content-Type: application/json" --noproxy localhost
- * --request POST \ --data '{"type":"Node1","properties":{"id": 1,"name":
- * "World"}}' \ http://localhost:8080/integration/api/direct
- */
-
 public class Application {
 
 	@Value("${server.port}")
@@ -65,27 +61,24 @@ public class Application {
 					.apiProperty("cors", "true") // cross-site
 					.apiContextRouteId("doc-api").component("servlet").bindingMode(RestBindingMode.json)
 					.dataFormatProperty("prettyPrint", "true");
-			/**
-			 * The Rest DSL supports automatic binding json/xml contents to/from POJOs using
-			 * Camels Data Format. By default the binding mode is off, meaning there is no
-			 * automatic binding happening for incoming and outgoing messages. You may want
-			 * to use binding if you develop POJOs that maps to your REST services request
-			 * and response types.
-			 */
 
-			rest("/api/").id("api-route").post("/direct").produces(MediaType.APPLICATION_JSON)
-					.consumes(MediaType.APPLICATION_JSON).bindingMode(RestBindingMode.auto).type(PersistNode.class)
-					.enableCORS(true)
-//                .outType(OutBean.class)
-					.to("direct:remoteService");
+			rest("/api/")
+				.id("api-route")
+				.post("/direct").type(PersistNode.class)
+				//.post("/direct/concept").type(Concept.class)
+				.produces(MediaType.APPLICATION_JSON)
+				.consumes(MediaType.APPLICATION_JSON)
+				.bindingMode(RestBindingMode.auto)
+				.enableCORS(true)
+				.to("direct:remoteService")
+				;
 
 			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-					.process(this::process)
-					.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
+					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
 		}
 
 		public void process(Exchange exchange) throws Exception {
-			PersistNode in = (PersistNode) exchange.getIn().getBody();
+			Object in = exchange.getIn().getBody();
 			persistenceService.persist(in);
 			exchange.getIn().setBody(in);
 		}

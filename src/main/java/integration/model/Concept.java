@@ -6,16 +6,28 @@ import javax.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import integration.persistence.PersistNode;
-import lombok.Data;
-
 @Entity
-@Data
-public class Concept extends PersistNode {
+public class Concept {
 	@Id
 	@GeneratedValue
 	@JsonProperty
 	private int id;
 	@JsonProperty
 	private String name;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 }
