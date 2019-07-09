@@ -34,27 +34,27 @@ public class Application {
 		SpringApplication.run(Application.class, args);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	//@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean
-	ServletRegistrationBean servletRegistrationBean() {
-		ServletRegistrationBean servlet = new ServletRegistrationBean(new CamelHttpTransportServlet(),
-				contextPath + "/*");
+	ServletRegistrationBean<CamelHttpTransportServlet> servletRegistrationBean() {
+		ServletRegistrationBean<CamelHttpTransportServlet> servlet = new ServletRegistrationBean<>(
+				new CamelHttpTransportServlet(), contextPath + "/*");
 		servlet.setName("CamelServlet");
 		return servlet;
 	}
 
 	@Component
 	class RestApi extends RouteBuilder {
+		private PersistenceService persistenceService;
+		private CamelContext context;
 
-		@Autowired
-		PersistenceService persistenceService;
+		public RestApi(CamelContext context, PersistenceService persistenceService) {
+			this.context = context;
+			this.persistenceService = persistenceService;
+		}
 
 		@Override
 		public void configure() {
-
-			@SuppressWarnings("unused")
-			CamelContext context = new DefaultCamelContext();
-
 			restConfiguration().contextPath(contextPath) //
 					.port(serverPort).enableCORS(true).apiContextPath("/api-doc")
 					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
@@ -62,16 +62,10 @@ public class Application {
 					.apiContextRouteId("doc-api").component("servlet").bindingMode(RestBindingMode.json)
 					.dataFormatProperty("prettyPrint", "true");
 
-			rest("/api/")
-				.id("api-route")
-				.post("/direct").type(PersistNode.class)
-				//.post("/direct/concept").type(Concept.class)
-				.produces(MediaType.APPLICATION_JSON)
-				.consumes(MediaType.APPLICATION_JSON)
-				.bindingMode(RestBindingMode.auto)
-				.enableCORS(true)
-				.to("direct:remoteService")
-				;
+			rest("/api/").id("api-route").post("/direct").type(PersistNode.class)
+					// .post("/direct/concept").type(Concept.class)
+					.produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON)
+					.bindingMode(RestBindingMode.auto).enableCORS(true).to("direct:remoteService");
 
 			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
 					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
