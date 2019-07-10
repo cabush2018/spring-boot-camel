@@ -3,34 +3,20 @@ package integration.persistence;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Builder.Default;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+@Getter @Setter @ToString @Builder
 public class PersistNode {
 
-	@JsonProperty 
 	private String type;
 	
-	@JsonProperty 
+	@Default
 	private Map<String, Object> properties = new HashMap<>();
 
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public Map<String, Object> getProperties() {
-		return properties;
-	}
-
-	public void setProperties(Map<String, Object> properties) {
-		this.properties = properties;
-	}
-
-	@JsonAnySetter
 	public void prop(String k, Object v) {
 		properties.put(k, v);
 	}

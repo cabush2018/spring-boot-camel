@@ -1,5 +1,7 @@
 package integration;
 
+import java.util.Map;
+
 import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.CamelContext;
@@ -12,6 +14,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import integration.model.Thing;
@@ -53,7 +56,7 @@ public class IntegrationApplication {
 		@Override
 		public void configure() {
 			restConfiguration().contextPath(contextPath) 
-					.port(serverPort).enableCORS(true)//.apiContextPath("/api-doc")
+					.port(serverPort).enableCORS(true).apiContextPath("/api-doc")
 					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
 					.apiProperty("cors", "true") 
 					.apiContextRouteId("doc-api").component("servlet")
@@ -61,27 +64,31 @@ public class IntegrationApplication {
 					.dataFormatProperty("prettyPrint", "true")
 					;
 
-	          rest("/")
-		          .produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON)
-		          .post("/direct")
-		          		.enableCORS(true)
+	          rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON)
+	          		.enableCORS(true)
+
+	          		.post("/direct").description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
 		          		.route().routeId("direct")
 		          		.inputType(PersistNode.class)
 		                .log("${body}")
-						.to("direct:remoteService")
-//						.transform().constant("Hello World!")
+		                .to("bean:persistenceService?method=persist(${body})")	                
 						.endRest()
-		           .post("/direct/thing")
-		           		.enableCORS(true)
+					.post("/direct/thing").description("POST an entity of type <thing>, to be persisted according to its JPA mappings.")
 		           		.route().routeId("thing")
-//		           		.bean("hello")
 		           		.inputType(Thing.class)
 		           		.log("${body}")
-						.to("direct:remoteService")
+		           		.to("jpa:Thing")
+		           		//.to("direct:remoteService")
+						.endRest()
+		           .post("/direct/{type}").description("POST an entity of dynamic {type}, to be persisted according to its JPA mappings.")
+		           		.route().routeId("direct-mapped")
+		           		.inputType(Map.class)
+		           		.log("${header.type} -- ${body}")
+		           		.to("bean:persistenceService?method=persist(${header.type}, ${body})")
 						;
           
 			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(201));
+					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
 		}
 
 		public void process(Exchange exchange) throws Exception {

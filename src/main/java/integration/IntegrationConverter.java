@@ -30,9 +30,6 @@ public class IntegrationConverter implements TypeConverters {
 		}
 		@SuppressWarnings("unchecked")
 		Map<String, Object> properties = (Map<String, Object>) props.get(DYNAMIC_PROPS);
-		PersistNode newNode = new PersistNode();
-		newNode.setProperties(properties);
-		newNode.setType(type);
-		return newNode;
+		return PersistNode.builder().type(type).properties(properties).build();
 	}
 }
