@@ -7,7 +7,7 @@ import javax.persistence.Id;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
-public class Concept {
+public class Thing {
 	@Id
 	@GeneratedValue
 	@JsonProperty

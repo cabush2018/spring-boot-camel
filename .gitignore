@@ -4,3 +4,5 @@ target
 .springbeans
 .idea
 .settings
+eclipse
+.factorypath

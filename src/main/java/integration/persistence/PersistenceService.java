@@ -30,10 +30,9 @@ public class PersistenceService {
 	}
 
 	private boolean isMapped(Object in) {
-		boolean isMapped = em. getMetamodel().getEntities().parallelStream()
+		return em. getMetamodel().getEntities().parallelStream()
 				.map(EntityType::getJavaType)
 				.anyMatch(in.getClass()::equals);
-		return isMapped;
 	}
 
 	private void persistUnmapped(PersistNode in) {
@@ -44,7 +43,7 @@ public class PersistenceService {
 	}
 
 	private void persistMapped(Object in) {
-		em.persist(in);
+		em.merge(in);
 	}
 
 	private void insert(PersistNode in) {

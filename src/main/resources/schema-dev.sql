@@ -1,16 +1,7 @@
-CREATE TABLE pet (
+CREATE TABLE Node (
 	name VARCHAR(20),
-	owner VARCHAR(20),
-	species VARCHAR(20),
-	sex CHAR(1),
-	birth DATE,
-	id INT
-) ;
-
-CREATE TABLE Node1 (
-	name VARCHAR(20),
-	sex CHAR(1),
-	birth DATE,
-	height decimal,
+	active CHAR(1),
+	since DATE,
+	size decimal,
 	id INT
 ) ;
