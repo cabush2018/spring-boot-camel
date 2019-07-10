@@ -21,6 +21,9 @@ import integration.model.Thing;
 import integration.persistence.PersistNode;
 import integration.persistence.PersistenceService;
 
+/*test with 
+ * curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"type":"Node", "properties":{"id": 10,"name": "hello"}}' http://localhost:9080/integration/direct && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Thing && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Another
+*/	
 @SpringBootApplication
 public class IntegrationApplication {
 
