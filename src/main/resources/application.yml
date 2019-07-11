@@ -18,3 +18,15 @@ management:
   endpoints:
     enabled-by-default: false
 
+app:
+  mappings:
+    Thing:
+      table: Thing_table
+      attr1: column_1
+      attr2: column_2
+      attr3: column_3
+    Another:
+      table: AnotherTable
+      a1: col1
+      a2: col2
+  magic: 42  
