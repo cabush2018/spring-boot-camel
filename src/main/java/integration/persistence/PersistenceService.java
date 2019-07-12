@@ -2,6 +2,7 @@ package integration.persistence;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -12,12 +13,20 @@ import javax.persistence.metamodel.EntityType;
 import javax.transaction.Transactional;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
+
+import integration.IntegrationConverter;
+import lombok.Setter;
 
 @Service
 @Transactional
+@ConfigurationProperties(prefix = "app")
 public class PersistenceService {
+	@Setter
+	private Map<String, Map<?, ?>> mappings;
 
 	@PersistenceContext
 	EntityManager em;
@@ -25,11 +34,17 @@ public class PersistenceService {
 	@Value("${app.model.package}")
 	private String modelPackage;
 
+	@Autowired
+	IntegrationConverter converter;
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void persist(Object in) {
 		if (isMapped(in)) {
 			persistMapped(in);
 		} else if (in instanceof PersistNode) {
 			persistUnmapped((PersistNode) in);
+		} else if (in instanceof List) {
+			((List)in).stream().map(converter::toPersistNode).forEach(this::persist);
 		} else {
 			throw new TypeNotPresentException(in.getClass().getCanonicalName(), null);
 		}

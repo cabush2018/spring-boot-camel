@@ -1,8 +1,8 @@
 package integration;
 
+import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.CamelContext;
@@ -13,30 +13,21 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import integration.model.Thing;
 import integration.persistence.PersistNode;
 import integration.persistence.PersistenceService;
-import lombok.Getter;
-import lombok.Setter;
 
 /*test with 
  * curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"type":"Node", "properties":{"id": 10,"name": "hello"}}' http://localhost:9080/integration/direct && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Thing && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Another
 */
 @SpringBootApplication
 @EnableConfigurationProperties
-@ConfigurationProperties(prefix = "app")
-@Getter @Setter
 public class IntegrationApplication {
-	private int magic;
-	private Map<String, Map<?, ?>> mappings;
-
 	@Value("${server.port}")
 	String serverPort;
 
@@ -58,11 +49,8 @@ public class IntegrationApplication {
 	@Component
 	class RestApi extends RouteBuilder {
 		private PersistenceService persistenceService;
-		@SuppressWarnings("unused")
-		private CamelContext context;
 
 		public RestApi(CamelContext context, PersistenceService persistenceService) {
-			this.context = context;
 			this.persistenceService = persistenceService;
 		}
 
@@ -74,17 +62,22 @@ public class IntegrationApplication {
 					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
-
-					.post("/direct")
-					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-					.route().routeId("direct").inputType(PersistNode.class).log("${body}")
-					.to("bean:persistenceService?method=persist(${body})").endRest().post("/direct/thing")
-					.description("POST an entity of type <thing>, to be persisted according to its JPA mappings.")
-					.route().routeId("thing").inputType(Thing.class).log("${body}").to("jpa:Thing")
-					// .to("direct:remoteService")
-					.endRest().post("/direct/{type}")
-					.description("POST an entity of dynamic {type}, to be persisted according to its JPA mappings.")
-					.route().routeId("direct-mapped").inputType(Map.class).log("${header.type} -- ${body}")
+				.post("/direct").description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
+					.route().routeId("direct")
+					.inputType(PersistNode.class)
+					.log("${body}")
+					.to("bean:persistenceService?method=persist(${body})")
+					.endRest()
+				.post("/direct/all").description("POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
+					.route().routeId("direct-array")
+					.inputType(List.class)
+					.log("${body}")
+					.to("bean:persistenceService?method=persist(${body})")
+					.endRest()
+				.post("/direct/{type}").description("POST an entity of dynamic {type}, to be persisted according to its JPA mappings.")
+					.route().routeId("direct-mapped")
+					.inputType(Map.class)
+					.log("${header.type} -- ${body}")
 					.to("bean:persistenceService?method=persist(${header.type}, ${body})");
 
 			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")

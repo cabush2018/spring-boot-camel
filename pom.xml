@@ -14,19 +14,9 @@
 		<version>2.1.1.RELEASE</version>
 		<relativePath />
 	</parent>
-	<!-- <dependencyManagement> <dependencies> Spring Boot BOM <dependency> 
-		<groupId>org.springframework.boot</groupId> <artifactId>spring-boot-dependencies</artifactId> 
-		<version>${spring.boot-version}</version> <type>pom</type> <scope>import</scope> 
-		</dependency> Camel BOM <dependency> <groupId>org.apache.camel</groupId> 
-		<artifactId>camel-spring-boot-dependencies</artifactId> <version>${project.version}</version> 
-		<type>pom</type> <scope>import</scope> </dependency> We need to align the 
-		Hibernate versions <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-entitymanager</artifactId> 
-		</dependency> </dependencies> </dependencyManagement> -->
+
 	<properties>
-
-		<camel.version>3.0.0-SNAPSHOT</camel.version>
-
-		<!-- <camel.version>2.18.1</camel.version> -->
+		<camel.version>2.24.1</camel.version>
 	</properties>
 
 	<dependencies>
