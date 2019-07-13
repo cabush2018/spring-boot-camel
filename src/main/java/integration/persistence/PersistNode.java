@@ -17,20 +17,4 @@ public class PersistNode {
 	@Default
 	private Map<String, Object> properties = new HashMap<>();
 
-	public void prop(String k, Object v) {
-		properties.put(k, v);
-	}
-
-	public Object prop(String k) {
-		return properties.get(k);
-	}
-
-	public int getId() {
-		return (int)prop("id");
-	}
-
-	public String getName() {
-		return (String)prop("name");
-	}
-	
 }
