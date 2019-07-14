@@ -20,12 +20,17 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
-import integration.model.Concept;
-import integration.persistence.PersistNode;
 import integration.persistence.PersistenceService;
 
 /*test with 
- * curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"type":"Node", "properties":{"id": 10,"name": "hello"}}' http://localhost:9080/integration/direct && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Thing && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data '{"id": 10,"name": "hello"}' http://localhost:9080/integration/direct/Another
+ curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
+ 	'{"Concept_Audit":{"id":,"name": "hello audit", "create_On":"2019-05-01", "modified":true} \
+ 	, "Concept":{"id": 1,"name": "hello "} }' http://localhost:9080/integration/ \
+ && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
+ 	'{"id": 11,"name": "hello audit", "create_On":"2019-05-01", "modified":true}' http://localhost:9080/integration/Concept_Audit \
+ && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
+ 	'[{"Concept_Audit":{"id": 11,"name": "hello audit", "create_On":"2019-05-01", "modified":true}} \
+ 	, {"Concept":{"id": 1,"name": "hello "}} ]' http://localhost:9080/integration/all
 */
 @SpringBootApplication
 @EnableConfigurationProperties
@@ -60,7 +65,6 @@ public class IntegrationApplication {
 			this.persistenceService = persistenceService;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public void configure() {
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
@@ -71,7 +75,7 @@ public class IntegrationApplication {
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 				.post("/").description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
 					.route().routeId("direct")
-					.inputType(PersistNode.class)
+					.inputType(Map.class)
 					.log("${body}")
 					.to("bean:persistenceService?method=persist(${body})")
 				.endRest()
@@ -85,10 +89,7 @@ public class IntegrationApplication {
 					.route().routeId("direct-mapped")
 					.inputType(Map.class)
 					.log("${header.type} -- ${body}")
-					.process((Exchange e) -> {
-						Concept.builder().name((String) ((Map) e.getIn().getBody()).get("name")).build();})
-					.bean(IntegrationConverter.class, "toPersistNode(${header.type}, ${body})")
-					.to("bean:persistenceService?method=persist(${body})")
+					.to("bean:persistenceService?method=persist(${header.type}, ${body})")
 				;
 			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
 					.to("seda:input");

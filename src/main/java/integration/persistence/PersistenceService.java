@@ -13,6 +13,7 @@ import javax.persistence.metamodel.EntityType;
 import javax.transaction.Transactional;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.ConversionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -45,16 +46,27 @@ public class PersistenceService {
 			persistUnmapped((PersistNode) in);
 		} else if (in instanceof List) {
 			((List)in).stream().map(converter::toPersistNode).forEach(this::persist);
+		}  else if (in instanceof Map) {
+			((Map<String,Map<String,Object>>)in).entrySet().stream()
+				.forEach(this::persistEntry);
 		} else {
 			throw new TypeNotPresentException(in.getClass().getCanonicalName(), null);
 		}
 	}
 
-	public void persist(String type, Map<String, Object> properties)
-			throws InstantiationException, IllegalAccessException, ClassNotFoundException, InvocationTargetException {
-		Object obj = Class.forName(modelPackage+"." + type).newInstance();
-		BeanUtils.populate(obj, properties);
-		this.persist(obj);
+	public void persistEntry(Map.Entry<String,Map<String,Object>> e) {
+		this.persist(e.getKey(),e.getValue());
+	}
+
+	public void persist(String type, Map<String, Object> properties) {
+		try {
+			Object obj = Class.forName(modelPackage+"." + type).newInstance();
+			BeanUtils.populate(obj, properties);
+			this.persist(obj);
+		} catch (IllegalAccessException | InvocationTargetException | 
+				InstantiationException | ClassNotFoundException e) {
+			throw new ConversionException(e);		
+		}
 	}
 
 	private boolean isMapped(Object in) {
@@ -84,7 +96,10 @@ public class PersistenceService {
 		String pairs = in.getProperties().entrySet().stream()
 				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
 				.collect(Collectors.joining(","));
-		return executeQuery(String.format("UPDATE %s SET %s", in.getType(), pairs)) > 0;
+		String id = in.getProperties().entrySet().stream()
+				.filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey()))
+				.findFirst().map((Map.Entry<?, ?> e) -> "id = "+e.getValue()).get();
+		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
 	}
 
 	private int executeQuery(String sql) {
