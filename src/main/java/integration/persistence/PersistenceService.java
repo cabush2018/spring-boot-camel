@@ -11,8 +11,9 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.metamodel.EntityType;
 import javax.transaction.Transactional;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,24 +27,32 @@ import lombok.Setter;
 @Transactional
 @ConfigurationProperties(prefix = "app")
 public class PersistenceService {
+	
 	@Setter
 	private Map<String, Map<?, ?>> mappings;
+	
+	@Value("${app.unmapped-entities}")
+	private boolean processUnmapped;
+
+	@Value("${app.mapped-entities}")
+	private boolean processMapped;
 
 	@PersistenceContext
-	EntityManager em;
+	private EntityManager em;
 	
-	@Value("${app.model.package}")
-	private String modelPackage;
-
 	@Autowired
-	IntegrationConverter converter;
+	private IntegrationConverter converter;
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void persist(Object in) {
-		if (isMapped(in)) {
-			persistMapped(in);
-		} else if (in instanceof PersistNode) {
-			persistUnmapped((PersistNode) in);
+	public void persist(@NotNull Object in) {
+		if ( isMapped(in) ) {
+			if (processMapped) {
+				persistMapped(in);
+			}
+		} else if ( in instanceof PersistNode ) {
+			if ( processUnmapped ) {
+				persistUnmapped((PersistNode) in);
+			}
 		} else if (in instanceof List) {
 			((List)in).stream().map(converter::toPersistNode).forEach(this::persist);
 		}  else if (in instanceof Map) {
@@ -54,14 +63,13 @@ public class PersistenceService {
 		}
 	}
 
-	public void persistEntry(Map.Entry<String,Map<String,Object>> e) {
+	public void persistEntry(@NotNull Map.Entry<String,Map<String,Object>> e) {
 		this.persist(e.getKey(),e.getValue());
 	}
 
-	public void persist(String type, Map<String, Object> properties) {
+	public void persist(@NotBlank String entity, @NotNull Map<String, Object> properties) {
 		try {
-			Object obj = Class.forName(modelPackage+"." + type).newInstance();
-			BeanUtils.populate(obj, properties);
+			Object obj = converter.toPersistent(entity, properties);
 			this.persist(obj);
 		} catch (IllegalAccessException | InvocationTargetException | 
 				InstantiationException | ClassNotFoundException e) {
@@ -120,4 +128,5 @@ public class PersistenceService {
 		}
 		return value;
 	}
+
 }

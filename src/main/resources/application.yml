@@ -8,10 +8,10 @@ integration:
 
 camel:
   springboot:
-    # The Camel context name
+    # Camel context name
     name: ServicesRest
 
-# Binding health checks to a different port
+# Binding health to a different port
 management:
   server:
     port: 9081
@@ -29,4 +29,3 @@ app:
       table: AnotherTable
       a1: col1
       a2: col2
-  magic: 42  

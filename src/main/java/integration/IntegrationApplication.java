@@ -22,15 +22,10 @@ import org.springframework.stereotype.Component;
 
 import integration.persistence.PersistenceService;
 
-/*test with 
- curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
- 	'{"Concept_Audit":{"id":,"name": "hello audit", "create_On":"2019-05-01", "modified":true} \
- 	, "Concept":{"id": 1,"name": "hello "} }' http://localhost:9080/integration/ \
- && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
- 	'{"id": 11,"name": "hello audit", "create_On":"2019-05-01", "modified":true}' http://localhost:9080/integration/Concept_Audit \
- && curl --header "Content-Type: application/json" --noproxy localhost --request POST --data \
- 	'[{"Concept_Audit":{"id": 11,"name": "hello audit", "create_On":"2019-05-01", "modified":true}} \
- 	, {"Concept":{"id": 1,"name": "hello "}} ]' http://localhost:9080/integration/all
+/*test with one of
+curl --header 'Content-Type: application/json' --request POST --data '{"id": 1,"name": "hello "}' http://localhost:9080/integration/Concept
+curl --header 'Content-Type: application/json' --request POST --data '{"integration;model;Concept":{"id": 177, "name": "hello "}, "Node":{"id":4,"name":"fnode"}}' http://localhost:9080/integration/
+curl --header 'Content-Type: application/json' --request POST --data '[{"integration;model;Concept":{"id": 177, "name": "hello "}}, {"Node":{"id":4,"name":"fnode"}}]' http://localhost:9080/integration/all
 */
 @SpringBootApplication
 @EnableConfigurationProperties
