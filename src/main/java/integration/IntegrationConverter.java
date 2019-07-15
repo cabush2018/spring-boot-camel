@@ -32,7 +32,7 @@ public class IntegrationConverter implements TypeConverters {
 		return toPersistent(entry.getKey(), entry.getValue());
 		}
 
-	@Converter
+	@Converter @Deprecated
 	public PersistNode toPersistNode(@NotBlank String type, @NotNull Object o) {
 		Map<String, Object> props = (Map<String, Object>) o;
 		return PersistNode.builder().type(type).properties(props).build();
@@ -53,7 +53,7 @@ public class IntegrationConverter implements TypeConverters {
 	}
 
 
-	@Converter
+	@Converter @Deprecated
 	public List<Object> toPersistNode(@NotNull Map<?, ?>[] props) {
 		Object[] result = new PersistNode[props.length];
 		for (int i = 0; i < props.length; i++) {
