@@ -5,11 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,7 +41,7 @@ public class IntegrationApplicationTest {
 	public void testPostMapOfMappedJPAAndUnmappedNode() throws Exception {
 		// test POST Map to contextPath expect 2xx
 		String path = "/" + contextPath + "/";
-		String data = "{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}, \"Node\":{\"id\":4,\"name\":\"fnode\"}}";
+		String data = "{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}, \"Node\":{\"id\":4,\"name\":\"fnode\",\"active\":false}}";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, Map.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
 	}
@@ -53,7 +50,7 @@ public class IntegrationApplicationTest {
 	public void testPostArrayOfMappedJPAAndUnmappedNode() throws Exception {
 		// test POST Array to contextPath expect 2xx
 		String path = "/" + contextPath + "/all";
-		String data = "[{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\"}}]";
+		String data = "[{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
 	}
