@@ -1,11 +1,13 @@
 package integration;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
@@ -53,13 +55,16 @@ public class IntegrationApplication {
 
 		@Override
 		public void configure() {
-            onException()
+            onException(Exception.class)
 	            .handled(true)
-	            .maximumRedeliveries(2)
+	            .maximumRedeliveries(1)
 	            .logStackTrace(false)
 	            .logExhausted(false)
 	            .log(LoggingLevel.ERROR, "Failed processing ${body}")
-	            .to("file:dgp.error.log")
+	            .process(this::date)
+	            //.enrich("timer:time")
+	            .transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
+	            .to("file:{{app.error.log}}")
 	            ;
             
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
@@ -76,7 +81,7 @@ public class IntegrationApplication {
 							"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
 					.route().routeId("direct-array").inputType(List.class).log("${body}")
 					.to("bean:persistenceService?method=persist(${body})").endRest().post("/{type}")
-					.description("POST an entity of dynamic {type}, to be persisted according to its JPA mappings.")
+					.description("POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
 					.route().routeId("direct-mapped").inputType(Map.class).log("${header.type} -- ${body}")
 					.to("bean:persistenceService?method=persist(${header.type}, ${body})");
 			
@@ -102,11 +107,10 @@ public class IntegrationApplication {
 //from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
 //		.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
 
-//		public void process(Exchange exchange) throws Exception {
-//			Object in = exchange.getIn().getBody();
-//			persistenceService.persist(in);
-//			exchange.getIn().setBody(in);
-//		}
+		public void date(Exchange exchange) throws Exception {
+			Object in = exchange.getIn().getBody();
+			exchange.getIn().setBody(Calendar.getInstance().getTime().toGMTString()+"$"+in);
+		}
 
 //https://dzone.com/articles/apache-camel-integration
 //public class OrderRouter extends RouteBuilder {
