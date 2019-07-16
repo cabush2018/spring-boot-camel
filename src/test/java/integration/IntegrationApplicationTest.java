@@ -63,4 +63,13 @@ public class IntegrationApplicationTest {
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
 	}
+
+	@Test
+	public void testPostBogusObject() throws Exception {
+		// test POST Array to contextPath expect 2xx
+		String path = "/" + contextPath + "/all";
+		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
+		assertTrue(response.getStatusCode().is2xxSuccessful());
+	}
 }
