@@ -1,34 +1,76 @@
 package integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import org.junit.Ignore;
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import integration.model.Concept;
+import integration.persistence.PersistenceService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("dev")
 public class IntegrationApplicationTest {
 
 	@Autowired
 	private TestRestTemplate restTemplate;
 
-	@Test @Ignore
-	public void sayHelloTest() {
-		// Call the REST API
-		ResponseEntity<Object> response = restTemplate.postForEntity("/integration/Concept",
-				Concept.builder().name("first concept").build(), Object.class);
-		Object body = response.getBody();
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+	@Autowired
+	private PersistenceService persistenceService;
+
+	@Value("${integration.api.path}")
+	private String contextPath;
+
+	@Test
+	public void contextLoads() {
+		assertNotNull(persistenceService);
 	}
 
+	@Test
+	public void testPostMapOfMappedJPAAndUnmappedNode() throws Exception {
+		// test POST Map to contextPath expect 2xx
+		String path = "/" + contextPath + "/";
+		String data = "{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}, \"Node\":{\"id\":4,\"name\":\"fnode\",\"active\":false}}";
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, Map.class);
+		assertTrue(response.getStatusCode().is2xxSuccessful());
+	}
+
+	@Test
+	public void testPostArrayOfMappedJPAAndUnmappedNode() throws Exception {
+		// test POST Array to contextPath expect 2xx
+		String path = "/" + contextPath + "/all";
+		String data = "[{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
+		assertTrue(response.getStatusCode().is2xxSuccessful());
+	}
+
+	@Test
+	public void testPostObjectToDedicatedUrl() throws Exception {
+		// test POST Object to contextPath expect 2xx
+		String path = "/" + contextPath + "/Concept";
+		String data = "{\"id\": 177, \"name\": \"hello \"}";
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
+		assertTrue(response.getStatusCode().is2xxSuccessful());
+	}
+
+	@Test
+	public void testPostBogusObject() throws Exception {
+		// test POST Array to contextPath expect 2xx
+		String path = "/" + contextPath + "/all";
+		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
+		System.out.println("STATUS CODE:"+response.getStatusCode());
+		assertTrue(response.getStatusCode().is4xxClientError());
+	}
 }

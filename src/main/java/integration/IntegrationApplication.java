@@ -1,5 +1,6 @@
 package integration;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -7,10 +8,13 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
+import org.apache.camel.Handler;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
+import org.apache.camel.json.simple.JsonObject;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,8 +24,6 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
-import integration.persistence.PersistenceService;
-
 /*test with one of
 curl --header 'Content-Type: application/json' --request POST --data '{"id": 1,"name": "hello "}' http://localhost:9080/integration/Concept
 curl --header 'Content-Type: application/json' --request POST --data '{"integration;model;Concept":{"id": 177, "name": "hello "}, "Node":{"id":4,"name":"fnode"}}' http://localhost:9080/integration/
@@ -29,7 +31,7 @@ curl --header 'Content-Type: application/json' --request POST --data '[{"integra
 */
 @SpringBootApplication
 @EnableConfigurationProperties
-@EntityScan(basePackages = {"integration.model"})
+@EntityScan(basePackages = { "integration.model" })
 public class IntegrationApplication {
 	@Value("${server.port}")
 	String serverPort;
@@ -49,97 +51,122 @@ public class IntegrationApplication {
 		return servlet;
 	}
 
-	@Autowired
-	IntegrationConverter converter;
-
 	@Component
 	class RestApi extends RouteBuilder {
-		private PersistenceService persistenceService;
+		
+		public class PrepareErrorResponse {
+			@Handler
+		    public void prepareErrorResponse(Exchange exchange) {
+		        Message msg = exchange.getOut();
+		        msg.setHeader(Exchange.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+		        msg.setHeader(Exchange.HTTP_RESPONSE_CODE, 400);
+//		        JsonObject errorMessage = new JsonObject();
+//		        errorMessage.put("error", "Bad Request");
+//		        errorMessage.put("reason", cause.getMessage());
+//		        msg.setBody(errorMessage.toString());
 
-		public RestApi(CamelContext context, PersistenceService persistenceService) {
-			this.persistenceService = persistenceService;
+		        // we need to do the fault=false below in order to prevent a HTTP 500 error code from being returned
+		        msg.setFault(false);
+		    }
+		}
+		
+		public RestApi(CamelContext context) {
 		}
 
 		@Override
 		public void configure() {
+            onException(Exception.class)
+	            .handled(true)
+	            .maximumRedeliveries(1)
+	            .logStackTrace(false)
+	            .logExhausted(false)
+	            .log(LoggingLevel.ERROR, "Failed processing ${body}")	            
+	            //.process(this::date)
+	            .transform().simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
+	            //.transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
+            	.bean(PrepareErrorResponse.class)
+	            .to("file:{{app.error.log}}")
+	            ;
+            
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
-				.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
-				.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
-				.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
+					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
+					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
+					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
-				.post("/").description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
+				.post("/")
+					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
 					.route().routeId("direct")
 					.inputType(Map.class)
 					.log("${body}")
 					.to("bean:persistenceService?method=persist(${body})")
-				.endRest()
-				.post("/all").description("POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
+					.endRest()
+				.post("/all")
+					.description("POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
 					.route().routeId("direct-array")
 					.inputType(List.class)
 					.log("${body}")
 					.to("bean:persistenceService?method=persist(${body})")
-				.endRest()
-				.post("/{type}").description("POST an entity of dynamic {type}, to be persisted according to its JPA mappings.")
+					.endRest()
+				.post("/{type}")
+					.description("POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
 					.route().routeId("direct-mapped")
 					.inputType(Map.class)
 					.log("${header.type} -- ${body}")
-					.to("bean:persistenceService?method=persist(${header.type}, ${body})")
-				;
-			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-					.to("seda:input");
-
-			from("seda:input").threads(5).to("bean:persistenceService?method=persist(${body})")
-//				.to("bean:createResponse")
-//				.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED))
-			;
-
-			// java
-//			from("mina:tcp://0.0.0.0:9876?textline=true&sync=true") 
-//				
-//				.to("seda:input"); 
-//			from("seda:input") 
-//				.threads(5)
-//				.to("bean:processInput") 
-//				.to("bean:createResponse"); 
-//			
-//			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-//					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
+					.to("bean:persistenceService?method=persist(${header.type}, ${body})");
 		}
-
-		public void process(Exchange exchange) throws Exception {
+		public void date(Exchange exchange) throws Exception {
 			Object in = exchange.getIn().getBody();
-			persistenceService.persist(in);
-			exchange.getIn().setBody(in);
+			exchange.getIn().setBody(Calendar.getInstance().getTime().toGMTString()+"$"+in);
 		}
+	}
+}
+
+
+//from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
+//.to("seda:input");
+//
+//from("seda:input").threads(5).to("bean:persistenceService?method=persist(${body})")
+//.to("bean:createResponse")
+//.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED))
+;
+
+//java
+//from("mina:tcp://0.0.0.0:9876?textline=true&sync=true") 
+//
+//.to("seda:input"); 
+//from("seda:input") 
+//.threads(5)
+//.to("bean:processInput") 
+//.to("bean:createResponse"); 
+//
+//from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
+//.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
 
 //https://dzone.com/articles/apache-camel-integration
 //public class OrderRouter extends RouteBuilder {
 //
-//    @Override
-//    public void configure() throws Exception {
-//        JaxbDataFormat jaxb = new JaxbDataFormat("org.fusesource.camel");
-//        
-//        // Receive orders from two endpoints
-//        from("file:src/data?noop=true").to("jms:incomingOrderQueue");
-//        from("jetty:http://localhost:8888/placeorder")
-//          .inOnly().to("jms:incomingOrderQueue")
-//          .transform().constant("OK");
+//@Override
+//public void configure() throws Exception {
+//JaxbDataFormat jaxb = new JaxbDataFormat("org.fusesource.camel");
 //
-//        // Do the normalization
-//        from("jms:incomingOrderQueue")
-//         .convertBodyTo(String.class)
-//         .choice()
-//           .when().method("orderHelper", "isXml")
-//             .unmarshal(jaxb)
-//             .to("jms:orderQueue")
-//           .when().method("orderHelper", "isCsv")
-//             .unmarshal().csv()         
-//             .to("bean:normalizer")
-//             .to("jms:orderQueue");
-//    }
+//// Receive orders from two endpoints
+//from("file:src/data?noop=true").to("jms:incomingOrderQueue");
+//from("jetty:http://localhost:8888/placeorder")
+//  .inOnly().to("jms:incomingOrderQueue")
+//  .transform().constant("OK");
+//
+//// Do the normalization
+//from("jms:incomingOrderQueue")
+// .convertBodyTo(String.class)
+// .choice()
+//   .when().method("orderHelper", "isXml")
+//     .unmarshal(jaxb)
+//     .to("jms:orderQueue")
+//   .when().method("orderHelper", "isCsv")
+//     .unmarshal().csv()         
+//     .to("bean:normalizer")
+//     .to("jms:orderQueue");
+//}
 //
 //}		
-
-	}
-}
