@@ -1,0 +1,47 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.6.RELEASE'
+	id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'integration'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-jersey'
+	implementation 'org.springframework.boot:spring-boot-starter-jooq'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.apache.camel:camel-spring-boot-starter:2.24.0'
+
+	implementation 'org.apache.camel:camel-servlet-starter:2.24.0'
+	implementation 'org.apache.camel:camel-jackson-starter:2.24.0'
+	implementation 'org.apache.camel:camel-jpa-starter:2.24.0'
+	implementation 'org.apache.camel:camel-swagger-java-starter:2.24.0'
+
+	implementation 'javax.persistence:javax.persistence-api'
+	implementation 'commons-beanutils:commons-beanutils:1.9.3'
+	implementation 'javax.interceptor:javax.interceptor-api:1.2'
+	
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'mysql:mysql-connector-java'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.apache.camel:camel-test-spring:2.24.0'
+}
