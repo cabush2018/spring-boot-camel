@@ -70,6 +70,7 @@ public class IntegrationApplicationTest {
 		String path = "/" + contextPath + "/all";
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
-		assertTrue(response.getStatusCode().is2xxSuccessful());
+		System.out.println("STATUS CODE:"+response.getStatusCode());
+		assertTrue(response.getStatusCode().is4xxClientError());
 	}
 }

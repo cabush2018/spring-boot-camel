@@ -6,3 +6,6 @@ target
 .settings
 eclipse
 .factorypath
+ID-
+error.log
+/dgp.error.log/
