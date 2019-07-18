@@ -1,0 +1,57 @@
+-Dspring.config.location = C:\application.properties
+
+//https://dzone.com/articles/apache-camel-integration
+//public class OrderRouter extends RouteBuilder {
+//
+//    @Override
+//    public void configure() throws Exception {
+//        JaxbDataFormat jaxb = new JaxbDataFormat("org.fusesource.camel");
+//        
+//        // Receive orders from two endpoints
+//        from("file:src/data?noop=true").to("jms:incomingOrderQueue");
+//        from("jetty:http://localhost:8888/placeorder")
+//          .inOnly().to("jms:incomingOrderQueue")
+//          .transform().constant("OK");
+//
+//        // Do the normalization
+//        from("jms:incomingOrderQueue")
+//         .convertBodyTo(String.class)
+//         .choice()
+//           .when().method("orderHelper", "isXml")
+//             .unmarshal(jaxb)
+//             .to("jms:orderQueue")
+//           .when().method("orderHelper", "isCsv")
+//             .unmarshal().csv()         
+//             .to("bean:normalizer")
+//             .to("jms:orderQueue");
+//    }
+//
+//}		
+
+
+		public void process(Exchange exchange) throws Exception {
+			Object in = exchange.getIn().getBody();
+			persistenceService.persist(in);
+			exchange.getIn().setBody(in);
+		}
+
+			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
+					.to("seda:input");
+
+			from("seda:input").threads(5).to("bean:persistenceService?method=persist(${body})")
+//				.to("bean:createResponse")
+//				.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED))
+			;
+
+			// java
+//			from("mina:tcp://0.0.0.0:9876?textline=true&sync=true") 
+//				
+//				.to("seda:input"); 
+//			from("seda:input") 
+//				.threads(5)
+//				.to("bean:processInput") 
+//				.to("bean:createResponse"); 
+//			
+//			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
+//					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
+

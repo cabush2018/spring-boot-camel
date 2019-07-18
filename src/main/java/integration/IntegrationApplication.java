@@ -13,7 +13,6 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
-import org.apache.camel.json.simple.JsonObject;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -38,6 +37,11 @@ public class IntegrationApplication {
 
 	@Value("${integration.api.path}")
 	String contextPath;
+	
+	@Value("${integration.queue:1000}")
+	int sizeQueue;
+	
+	int sizePool=Runtime.getRuntime().availableProcessors();
 
 	public static void main(String[] args) {
 		SpringApplication.run(IntegrationApplication.class, args);
@@ -57,9 +61,11 @@ public class IntegrationApplication {
 		public class PrepareErrorResponse {
 			@Handler
 		    public void prepareErrorResponse(Exchange exchange) {
+				Exception exception = (Exception) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
 		        Message msg = exchange.getOut();
 		        msg.setHeader(Exchange.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 		        msg.setHeader(Exchange.HTTP_RESPONSE_CODE, 400);
+		        msg.setHeader(Exchange.EXCEPTION_CAUGHT, exception);
 //		        JsonObject errorMessage = new JsonObject();
 //		        errorMessage.put("error", "Bad Request");
 //		        errorMessage.put("reason", cause.getMessage());
@@ -70,103 +76,51 @@ public class IntegrationApplication {
 		    }
 		}
 		
-		public RestApi(CamelContext context) {
+		IntegrationConverter converter;
+		public RestApi(CamelContext context, IntegrationConverter converter) {
+			this.converter=converter;
 		}
 
 		@Override
 		public void configure() {
             onException(Exception.class)
 	            .handled(true)
-	            .maximumRedeliveries(1)
-	            .logStackTrace(false)
-	            .logExhausted(false)
+	            .maximumRedeliveries(0)
+	            .logStackTrace(true)
+	            .logExhausted(true)
 	            .log(LoggingLevel.ERROR, "Failed processing ${body}")	            
-	            //.process(this::date)
 	            .transform().simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
 	            //.transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
             	.bean(PrepareErrorResponse.class)
 	            .to("file:{{app.error.log}}")
-	            ;
+	            .end();
             
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
-					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
-					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
-					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
+				.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
+				.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
+				.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 				.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-					.route().routeId("direct")
-					.inputType(Map.class)
-					.log("${body}")
-					.to("bean:persistenceService?method=persist(${body})")
-					.endRest()
+					.route().routeId("direct").inputType(Map.class)
+					.to("seda:input").endRest()
 				.post("/all")
 					.description("POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
-					.route().routeId("direct-array")
-					.inputType(List.class)
-					.log("${body}")
-					.to("bean:persistenceService?method=persist(${body})")
-					.endRest()
+					.route().routeId("direct-array").inputType(List.class)
+					.to("seda:input").endRest()
 				.post("/{type}")
 					.description("POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
-					.route().routeId("direct-mapped")
-					.inputType(Map.class)
-					.log("${header.type} -- ${body}")
-					.to("bean:persistenceService?method=persist(${header.type}, ${body})");
+					.route().routeId("direct-mapped").inputType(Map.class)
+					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
+					.to("seda:input");
+			
+			from("seda:input")
+				.threads(sizePool)
+				.maxQueueSize(sizeQueue)
+				.log("${body}")
+				.to("bean:persistenceService?method=persist(${body})");
 		}
-		public void date(Exchange exchange) throws Exception {
-			Object in = exchange.getIn().getBody();
-			exchange.getIn().setBody(Calendar.getInstance().getTime().toGMTString()+"$"+in);
-		}
+
 	}
 }
-
-
-//from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-//.to("seda:input");
-//
-//from("seda:input").threads(5).to("bean:persistenceService?method=persist(${body})")
-//.to("bean:createResponse")
-//.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED))
-;
-
-//java
-//from("mina:tcp://0.0.0.0:9876?textline=true&sync=true") 
-//
-//.to("seda:input"); 
-//from("seda:input") 
-//.threads(5)
-//.to("bean:processInput") 
-//.to("bean:createResponse"); 
-//
-//from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-//.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
-
-//https://dzone.com/articles/apache-camel-integration
-//public class OrderRouter extends RouteBuilder {
-//
-//@Override
-//public void configure() throws Exception {
-//JaxbDataFormat jaxb = new JaxbDataFormat("org.fusesource.camel");
-//
-//// Receive orders from two endpoints
-//from("file:src/data?noop=true").to("jms:incomingOrderQueue");
-//from("jetty:http://localhost:8888/placeorder")
-//  .inOnly().to("jms:incomingOrderQueue")
-//  .transform().constant("OK");
-//
-//// Do the normalization
-//from("jms:incomingOrderQueue")
-// .convertBodyTo(String.class)
-// .choice()
-//   .when().method("orderHelper", "isXml")
-//     .unmarshal(jaxb)
-//     .to("jms:orderQueue")
-//   .when().method("orderHelper", "isCsv")
-//     .unmarshal().csv()         
-//     .to("bean:normalizer")
-//     .to("jms:orderQueue");
-//}
-//
-//}		
