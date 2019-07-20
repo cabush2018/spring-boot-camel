@@ -71,6 +71,6 @@ public class IntegrationApplicationTest {
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
 		System.out.println("STATUS CODE:"+response.getStatusCode());
-		//assertTrue(response.getStatusCode(). isError());
+		assertTrue(response.getStatusCode(). isError());
 	}
 }

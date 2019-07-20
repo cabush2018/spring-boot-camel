@@ -4,6 +4,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -86,19 +88,20 @@ public class PersistenceService {
 	}
 
 	private boolean insert(PersistNode in) {
-		String columns = in.getProperties().keySet().stream().collect(Collectors.joining(","));
-		String values = in.getProperties().entrySet().stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
+		Set<Entry<String, Object>> inSet = in.getProperties().entrySet();
+		String columns = inSet.stream().map(Map.Entry<String, Object>::getKey).collect(Collectors.joining(","));
+		String values = inSet.stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
 				.collect(Collectors.joining(","));
 		return executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values)) > 0;
 	}
 
 	private boolean update(PersistNode in) {
-		String pairs = in.getProperties().entrySet().stream()
+		Set<Entry<String, Object>> inSet = in.getProperties().entrySet();
+		String pairs = inSet.stream()
 				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
 				.collect(Collectors.joining(","));
-		String id = in.getProperties().entrySet().stream()
-				.filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey())).findFirst()
-				.map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
+		String id = inSet.stream().filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey()))
+				.findFirst().map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
 		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
 	}
 

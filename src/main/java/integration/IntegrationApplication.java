@@ -1,11 +1,12 @@
 package integration;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 
-import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
 import org.apache.camel.LoggingLevel;
@@ -28,12 +29,12 @@ curl --header 'Content-Type: application/json' --request POST --data '{"id": 1,"
 curl --header 'Content-Type: application/json' --request POST --data '{"integration;model;Concept":{"id": 177, "name": "hello "}, "Node":{"id":4,"name":"fnode"}}' http://localhost:9080/integration/
 curl --header 'Content-Type: application/json' --request POST --data '[{"integration;model;Concept":{"id": 177, "name": "hello "}}, {"Node":{"id":4,"name":"fnode"}}]' http://localhost:9080/integration/all
 
-ab -n 1 -c 1 -T 'Content-Type: application/json' -p ./post.data.txt http://localhost:9080/integration/all
+ab -n 1 -c 1 -T 'Content-Type: application/json' -p ./bin/post.array.txt http://localhost:9080/integration/all
 
 */
 @SpringBootApplication
 @EnableConfigurationProperties
-@EnableCaching
+@EnableCaching 
 @EntityScan(basePackages = { "integration.model" })
 public class IntegrationApplication {
 	@Value("${server.port}")
@@ -66,49 +67,51 @@ public class IntegrationApplication {
 			@Handler
 			public void prepareErrorResponse(Exchange exchange) {
 				Exception exception = (Exception) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
+				Throwable rootEx = this.getRootCause(exception);
+				String infoStr = Arrays.asList(exchange.getIn().getBody(), exception, rootEx, rootEx.getMessage())
+						.stream().map(Object::toString).collect(Collectors.joining("\n"));
 				Message msg = exchange.getOut();
-				msg.setFault(false);
+				msg.setBody(infoStr, String.class);
+				msg.setFault(true);
 			}
-		}
 
-		IntegrationConverter converter;
-
-		public RestApi(CamelContext context, IntegrationConverter converter) {
-			this.converter = converter;
+			private Throwable getRootCause(Throwable e) {
+				while (e.getCause() != null) {
+					e = e.getCause();
+				}
+				return e;
+			}
 		}
 
 		@Override
 		public void configure() {
 			onException(Exception.class).handled(true).maximumRedeliveries(0)
-//	            .logStackTrace(true)
-//	            .logExhausted(true)
 					.log(LoggingLevel.ERROR, "Failed processing ${body}").transform()
 					.simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
 					// .transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
-					.bean(PrepareErrorResponse.class).to("{{app.error.log}}").end();
+					.bean(PrepareErrorResponse.class).multicast().to("{{app.error.log}}")
+					.to("log:integration.LOG?level=ERROR").end();
 
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
 					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
 					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
 					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
+			String stagedInput = "seda:input";
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 					.post("/")
-						.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-						.route().routeId("direct").inputType(Map.class).to("seda:input").endRest()
-					.post("/all")
-						.description(
-								"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
-						.route().routeId("direct-array").inputType(List.class)// .split(body())
-						.to("seda:input").endRest()
+					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
+					.route().routeId("direct").inputType(Map.class).to(stagedInput).endRest().post("/all")
+					.description(
+							"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
+					.route().routeId("direct-array").inputType(List.class).split(body()).to(stagedInput).endRest()
 					.post("/{type}")
-						.description(
-								"POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
-						.route().routeId("direct-mapped").inputType(Map.class)
-						.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
-						.to("seda:input");
+					.description(
+							"POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
+					.route().routeId("direct-mapped").inputType(Map.class)
+					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})").to(stagedInput);
 
-			from("seda:input").threads(sizePool).maxQueueSize(sizeQueue).log("${body}")
+			from(stagedInput).threads(sizePool).maxQueueSize(sizeQueue).log("${body}")
 					.to("bean:persistenceService?method=persist(${body})");
 		}
 

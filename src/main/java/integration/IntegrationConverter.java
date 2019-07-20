@@ -30,13 +30,14 @@ public class IntegrationConverter implements TypeConverters {
 		return toPersistent(entry.getKey(), entry.getValue());
 		}
 
+	@SneakyThrows
 	public Object toPersistent(String entity, Map<String, Object> properties)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, InvocationTargetException {
 		final String[] location=entity.split("\\s|\\-|\\:|\\;|,|\\^|\\&|\\%|\\$|\\#|\\@|\\!");
 		Object obj ;
 		if (location.length>1) {
 			String type = Arrays.asList(location).stream().collect(Collectors.joining("."));
-			obj = Class.forName(type).newInstance();
+			obj = Class.forName(type).getConstructor().newInstance();
 			BeanUtils.populate(obj, properties);
 		} else {
 			obj = PersistNode.builder().type(entity).properties(properties).build();
