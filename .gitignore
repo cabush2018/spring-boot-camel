@@ -9,3 +9,8 @@ eclipse
 build/
 ID-
 log
+.log
+.gradle
+.log/
+error.log
+dgp.error.log

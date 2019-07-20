@@ -18,6 +18,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import integration.IntegrationConverter;
@@ -77,9 +78,12 @@ public class PersistenceService {
 		}
 	}
 
-	private boolean isMapped(Object in) {
-		return em.getMetamodel().getEntities().parallelStream().map(EntityType::getJavaType).map(Class::getSimpleName)
-				.anyMatch(in.getClass().getSimpleName()::equals);
+	@Cacheable
+	public final boolean isMapped(Object in) {
+		String inClazz = in.getClass().getName();
+		return em.getMetamodel().getEntities().parallelStream()
+				.map(EntityType::getJavaType).map(Class::getName)
+				.anyMatch(inClazz::equals);
 	}
 
 	private void persistUnmapped(PersistNode in) {
@@ -111,8 +115,7 @@ public class PersistenceService {
 	}
 
 	private int executeQuery(String sql) {
-		Query queryUpdate = em.createNativeQuery(sql);
-		return queryUpdate.executeUpdate();
+		return em.createNativeQuery(sql).executeUpdate();
 	}
 
 	private String formatSql(Object e) {

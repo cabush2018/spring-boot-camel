@@ -1,6 +1,5 @@
 package integration;
 
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +12,7 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,7 @@ curl --header 'Content-Type: application/json' --request POST --data '[{"integra
 */
 @SpringBootApplication
 @EnableConfigurationProperties
+@EnableCaching
 @EntityScan(basePackages = { "integration.model" })
 public class IntegrationApplication {
 	@Value("${server.port}")
@@ -63,15 +65,6 @@ public class IntegrationApplication {
 		    public void prepareErrorResponse(Exchange exchange) {
 				Exception exception = (Exception) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
 		        Message msg = exchange.getOut();
-		        msg.setHeader(Exchange.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-		        msg.setHeader(Exchange.HTTP_RESPONSE_CODE, 400);
-		        msg.setHeader(Exchange.EXCEPTION_CAUGHT, exception);
-//		        JsonObject errorMessage = new JsonObject();
-//		        errorMessage.put("error", "Bad Request");
-//		        errorMessage.put("reason", cause.getMessage());
-//		        msg.setBody(errorMessage.toString());
-
-		        // we need to do the fault=false below in order to prevent a HTTP 500 error code from being returned
 		        msg.setFault(false);
 		    }
 		}
@@ -86,13 +79,13 @@ public class IntegrationApplication {
             onException(Exception.class)
 	            .handled(true)
 	            .maximumRedeliveries(0)
-	            .logStackTrace(true)
-	            .logExhausted(true)
+//	            .logStackTrace(true)
+//	            .logExhausted(true)
 	            .log(LoggingLevel.ERROR, "Failed processing ${body}")	            
 	            .transform().simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
 	            //.transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
-            	.bean(PrepareErrorResponse.class)
-	            .to("file:{{app.error.log}}")
+//            	.bean(PrepareErrorResponse.class)
+	            .to("{{app.error.log}}")
 	            .end();
             
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
@@ -103,11 +96,13 @@ public class IntegrationApplication {
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 				.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-					.route().routeId("direct").inputType(Map.class)
+					.route().routeId("direct")
+					.inputType(Map.class)
 					.to("seda:input").endRest()
 				.post("/all")
 					.description("POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
-					.route().routeId("direct-array").inputType(List.class)
+					.route().routeId("direct-array")
+					.inputType(List.class)
 					.to("seda:input").endRest()
 				.post("/{type}")
 					.description("POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")

@@ -9,7 +9,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-@Getter @Setter @ToString @Builder
+@Getter 
+@Setter 
+@ToString 
+@Builder
 public class PersistNode {
 
 	private String type;
