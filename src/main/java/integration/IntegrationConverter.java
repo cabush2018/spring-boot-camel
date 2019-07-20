@@ -32,12 +32,6 @@ public class IntegrationConverter implements TypeConverters {
 		return toPersistent(entry.getKey(), entry.getValue());
 		}
 
-	@Converter @Deprecated
-	public PersistNode toPersistNode(@NotBlank String type, @NotNull Object o) {
-		Map<String, Object> props = (Map<String, Object>) o;
-		return PersistNode.builder().type(type).properties(props).build();
-	}
-
 	public Object toPersistent(String entity, Map<String, Object> properties)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, InvocationTargetException {
 		final String[] location=entity.split("\\s|\\-|\\:|\\;|,|\\^|\\&|\\%|\\$|\\#|\\@|\\!");
@@ -50,16 +44,5 @@ public class IntegrationConverter implements TypeConverters {
 			obj = PersistNode.builder().type(entity).properties(properties).build();
 		}
 		return obj;
-	}
-
-
-	@Converter @Deprecated
-	public List<Object> toPersistNode(@NotNull Map<?, ?>[] props) {
-		Object[] result = new PersistNode[props.length];
-		for (int i = 0; i < props.length; i++) {
-			Map<?, ?> p = props[i];
-			result[i] = toPersistNode(p);
-		}
-		return Arrays.asList(result);
 	}
 }

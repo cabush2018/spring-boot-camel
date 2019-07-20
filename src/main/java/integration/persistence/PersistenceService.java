@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.persistence.metamodel.EntityType;
 import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
@@ -28,10 +27,10 @@ import lombok.Setter;
 @Transactional
 @ConfigurationProperties(prefix = "app")
 public class PersistenceService {
-	
+
 	@Setter
 	private Map<String, Map<?, ?>> mappings;
-	
+
 	@Value("${app.unmapped-entities}")
 	private boolean processUnmapped;
 
@@ -40,68 +39,57 @@ public class PersistenceService {
 
 	@PersistenceContext
 	private EntityManager em;
-	
+
 	@Autowired
 	private IntegrationConverter converter;
-	
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void persist(@NotNull Object in) {
-		if ( isMapped(in) ) {
-			if (processMapped) {
-				persistMapped(in);
-			}
-		} else if ( in instanceof PersistNode ) {
-			if ( processUnmapped ) {
-				persistUnmapped((PersistNode) in);
-			}
+	public Object persist(@NotNull Object in) {
+		if (processMapped && isMapped(in.getClass())) {
+			persistMapped(in);
+		} else if (processUnmapped && in instanceof PersistNode) {
+			persistUnmapped((PersistNode) in);
 		} else if (in instanceof List) {
-			((List)in).stream().map(converter::toPersistNode).forEach(this::persist);
-		}  else if (in instanceof Map) {
-			((Map<String,Map<String,Object>>)in).entrySet().stream()
-				.forEach(this::persistEntry);
+			((List) in).stream().map(converter::toPersistNode).forEach(this::persist);
+		} else if (in instanceof Map) {
+			((Map<String, Map<String, Object>>) in).entrySet().stream().forEach(this::persistEntry);
 		} else {
 			throw new TypeNotPresentException(in.getClass().getCanonicalName(), null);
 		}
+		return in;
 	}
 
-	public void persistEntry(@NotNull Map.Entry<String,Map<String,Object>> e) {
-		this.persist(e.getKey(),e.getValue());
+	public Object persistEntry(@NotNull Map.Entry<String, Map<String, Object>> e) {
+		return this.persist(e.getKey(), e.getValue());
 	}
 
-	public void persist(@NotBlank String entity, @NotNull Map<String, Object> properties) {
+	public Object persist(@NotBlank String entity, @NotNull Map<String, Object> properties) {
 		try {
-			Object obj = converter.toPersistent(entity, properties);
-			this.persist(obj);
-		} catch (IllegalAccessException | InvocationTargetException | 
-				InstantiationException | ClassNotFoundException e) {
-			throw new ConversionException(e);		
+			return this.persist(converter.toPersistent(entity, properties));
+		} catch (IllegalAccessException | InvocationTargetException | InstantiationException
+				| ClassNotFoundException e) {
+			throw new ConversionException(e);
 		}
 	}
 
 	@Cacheable
-	public final boolean isMapped(Object in) {
-		String inClazz = in.getClass().getName();
-		return em.getMetamodel().getEntities().parallelStream()
-				.map(EntityType::getJavaType).map(Class::getName)
-				.anyMatch(inClazz::equals);
+	public final boolean isMapped(Class<?> clazz) {
+		return em.getMetamodel().getEntities().parallelStream().map(EntityType::getJavaType).anyMatch(clazz::equals);
 	}
 
-	private void persistUnmapped(PersistNode in) {
-		if (update(in)) {
-			return;
-		}
-		insert(in);
+	private Object persistUnmapped(PersistNode in) {
+		return update(in) || insert(in) ? in : null;
 	}
 
-	private void persistMapped(Object in) {
-		em.merge(in);
+	private Object persistMapped(Object in) {
+		return em.merge(in);
 	}
 
-	private void insert(PersistNode in) {
+	private boolean insert(PersistNode in) {
 		String columns = in.getProperties().keySet().stream().collect(Collectors.joining(","));
 		String values = in.getProperties().entrySet().stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
 				.collect(Collectors.joining(","));
-		executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values));
+		return executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values)) > 0;
 	}
 
 	private boolean update(PersistNode in) {
@@ -109,8 +97,8 @@ public class PersistenceService {
 				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
 				.collect(Collectors.joining(","));
 		String id = in.getProperties().entrySet().stream()
-				.filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey()))
-				.findFirst().map((Map.Entry<?, ?> e) -> "id = "+e.getValue()).get();
+				.filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey())).findFirst()
+				.map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).get();
 		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
 	}
 
@@ -131,5 +119,4 @@ public class PersistenceService {
 		}
 		return value;
 	}
-
 }
