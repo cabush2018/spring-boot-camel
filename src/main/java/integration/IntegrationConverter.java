@@ -2,11 +2,9 @@ package integration;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.apache.camel.Converter;
@@ -24,7 +22,7 @@ public class IntegrationConverter implements TypeConverters {
 	@Converter
 	public Object toPersistNode(@NotNull Object o) {
 		Map<String, Map<String, Object>> obj = (Map<String, Map<String, Object>>) o;
-		return obj.entrySet().stream().findFirst().map(this::toPersistNode).get();
+		return obj.entrySet().stream().findFirst().map(this::toPersistNode).orElseThrow(RuntimeException::new);
 	}
 
 	@SneakyThrows

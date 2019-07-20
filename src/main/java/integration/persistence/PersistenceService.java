@@ -98,7 +98,7 @@ public class PersistenceService {
 				.collect(Collectors.joining(","));
 		String id = in.getProperties().entrySet().stream()
 				.filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey())).findFirst()
-				.map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).get();
+				.map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
 		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
 	}
 

@@ -7,10 +7,7 @@ target
 eclipse
 .factorypath
 build/
-ID-
-log
-.log
+ID-*
 .gradle
-.log/
-error.log
-dgp.error.log
+*.log
+*.jfr
