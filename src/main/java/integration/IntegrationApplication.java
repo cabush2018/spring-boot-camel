@@ -52,7 +52,7 @@ public class IntegrationApplication {
 		SpringApplication.run(IntegrationApplication.class, args);
 	}
 
-	@Bean
+	@Bean(name = "servletRegistrationBeanCamel")
 	ServletRegistrationBean<CamelHttpTransportServlet> servletRegistrationBean() {
 		ServletRegistrationBean<CamelHttpTransportServlet> servlet = new ServletRegistrationBean<>(
 				new CamelHttpTransportServlet(), contextPath + "/*");
@@ -124,8 +124,15 @@ public class IntegrationApplication {
 					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
 					.to(stagedInput);
 
-			from(stagedInput).threads(sizePool).maxQueueSize(sizeQueue).log("${body}")
-					.to("bean:persistenceService?method=persist(${body})");
+			from(stagedInput)
+				.threads(sizePool).maxQueueSize(sizeQueue)
+				.hystrix()
+					.to("bean:persistenceService?method=persist(${body})")
+	            .onFallback()
+	                .transform().simple("FALLBACK Hystrix ${body}")
+	            	.log("${body}")
+	            .end()
+					;
 		}
 
 	}
