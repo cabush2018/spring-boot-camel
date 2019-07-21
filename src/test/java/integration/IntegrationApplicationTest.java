@@ -1,8 +1,14 @@
 package integration;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Map;
 
 import org.junit.Test;
@@ -66,11 +72,18 @@ public class IntegrationApplicationTest {
 
 	@Test
 	public void testPostBogusObject() throws Exception {
+		String logLocation = "dgp.error.log";
+		Path appErrorLog = Paths.get(logLocation);
+		Files.walk(appErrorLog).sorted(Comparator.reverseOrder()).map(Path::toFile).peek(System.out::println)
+				.forEach(File::delete);
+		appErrorLog.toFile().delete();
+		assertFalse(appErrorLog.toFile().exists());
+
 		// test POST Array to contextPath expect 2xx
 		String path = "/" + contextPath + "/all";
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
-		System.out.println("STATUS CODE:"+response.getStatusCode());
-		assertTrue(response.getStatusCode(). isError());
+		System.out.println("STATUS CODE:" + response.getStatusCode());
+		assertTrue(appErrorLog.toFile().exists());
 	}
 }

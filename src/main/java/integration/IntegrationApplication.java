@@ -72,7 +72,6 @@ public class IntegrationApplication {
 						.stream().map(Object::toString).collect(Collectors.joining("\n"));
 				Message msg = exchange.getOut();
 				msg.setBody(infoStr, String.class);
-				msg.setFault(true);
 			}
 
 			private Throwable getRootCause(Throwable e) {
