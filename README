@@ -1,5 +1,12 @@
 -Dspring.config.location = C:\application.properties
 
+
+org.apache.camel.jmx.createRmiConnector=true
+org.apache.camel.jmx.mbeanObjectDomainName=org.apache.camel
+org.apache.camel.jmx.rmiConnector.registryPort=1099
+org.apache.camel.jmx.serviceUrlPath=camel
+
+
 //https://dzone.com/articles/apache-camel-integration
 //public class OrderRouter extends RouteBuilder {
 //
@@ -27,31 +34,4 @@
 //    }
 //
 //}		
-
-
-		public void process(Exchange exchange) throws Exception {
-			Object in = exchange.getIn().getBody();
-			persistenceService.persist(in);
-			exchange.getIn().setBody(in);
-		}
-
-			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-					.to("seda:input");
-
-			from("seda:input").threads(5).to("bean:persistenceService?method=persist(${body})")
-//				.to("bean:createResponse")
-//				.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED))
-			;
-
-			// java
-//			from("mina:tcp://0.0.0.0:9876?textline=true&sync=true") 
-//				
-//				.to("seda:input"); 
-//			from("seda:input") 
-//				.threads(5)
-//				.to("bean:processInput") 
-//				.to("bean:createResponse"); 
-//			
-//			from("direct:remoteService").routeId("direct-route").tracing().log(">>> ${body.id} - ${body.name}")
-//					.process(this::process).setHeader(Exchange.HTTP_RESPONSE_CODE, constant(HttpStatus.ACCEPTED));
 

@@ -1,6 +1,7 @@
 package integration;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -9,7 +10,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
@@ -85,12 +85,17 @@ public class IntegrationApplication {
 
 		@Override
 		public void configure() {
+			
+			errorHandler(defaultErrorHandler().maximumRedeliveries(0));
+			
 			onException(Exception.class).handled(true).maximumRedeliveries(0)
-					.log(LoggingLevel.ERROR, "Failed processing ${body}").transform()
-					.simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
-					// .transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
-					.bean(PrepareErrorResponse.class).multicast().to("{{app.error.log}}")
-					.to("log:integration.LOG?level=ERROR").end();
+					//.log(LoggingLevel.ERROR, "Failed processing ${body}")
+					//.transform()
+					//.simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
+					.transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
+					.bean(PrepareErrorResponse.class)
+					.multicast().to("{{app.error.log}}").to("log:integration.LOG?level=ERROR")
+					.end();
 
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
 					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
@@ -99,17 +104,25 @@ public class IntegrationApplication {
 
 			String stagedInput = "seda:input";
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
-					.post("/")
+				.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-					.route().routeId("direct").inputType(Map.class).to(stagedInput).endRest().post("/all")
+					.route().routeId("direct")
+					.inputType(Map.class).to(stagedInput)
+					.endRest()
+				.post("/all")
 					.description(
 							"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
-					.route().routeId("direct-array").inputType(List.class).split(body()).to(stagedInput).endRest()
-					.post("/{type}")
+					.route().routeId("direct-array")
+					.inputType(List.class)
+					.split(body())
+					.to(stagedInput)
+					.endRest()
+				.post("/{type}")
 					.description(
 							"POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
 					.route().routeId("direct-mapped").inputType(Map.class)
-					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})").to(stagedInput);
+					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
+					.to(stagedInput);
 
 			from(stagedInput).threads(sizePool).maxQueueSize(sizeQueue).log("${body}")
 					.to("bean:persistenceService?method=persist(${body})");
