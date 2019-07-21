@@ -1,8 +1,11 @@
 package integration;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.junit.Test;
@@ -66,11 +69,18 @@ public class IntegrationApplicationTest {
 
 	@Test
 	public void testPostBogusObject() throws Exception {
+		String logLocation = System.getProperty("app.error.log");
+		Path appErrorLog = Paths.get(logLocation);
+		appErrorLog.toFile().delete();
+		assertFalse(appErrorLog.toFile().exists());
+		
 		// test POST Array to contextPath expect 2xx
 		String path = "/" + contextPath + "/all";
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
 		System.out.println("STATUS CODE:"+response.getStatusCode());
+		assertTrue(appErrorLog.toFile().exists());
+
 		assertTrue(response.getStatusCode(). isError());
 	}
 }
