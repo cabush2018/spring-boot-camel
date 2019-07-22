@@ -33,10 +33,10 @@ public class PersistenceService {
 	@Setter
 	private Map<String, Map<?, ?>> mappings;
 
-	@Value("${app.unmapped-entities}")
+	@Value("${app.unmapped-entities:true}")
 	private boolean processUnmapped;
 
-	@Value("${app.mapped-entities}")
+	@Value("${app.mapped-entities:true}")
 	private boolean processMapped;
 
 	@PersistenceContext

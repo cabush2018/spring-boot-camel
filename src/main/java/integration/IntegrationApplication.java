@@ -102,6 +102,9 @@ public class IntegrationApplication {
 					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			String stagedInput = "seda:input";
+			String persistence = "bean:persistenceService?method=persist(${body})";
+			String remotePersistence = "direct:remote-persistence";
+
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 				.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
@@ -125,13 +128,15 @@ public class IntegrationApplication {
 
 			from(stagedInput)
 				.threads(sizePool).maxQueueSize(sizeQueue)
+				.to(remotePersistence);
+			
+			from(remotePersistence)
 				.hystrix()
-					.to("bean:persistenceService?method=persist(${body})")
-	            .onFallback()
-	                .transform().simple("FALLBACK Hystrix ${body}")
-	            	.log("${body}")
-	            .end()
-					;
+					.to(persistence)
+		        .onFallback()
+		            .transform().simple("FALLBACK Hystrix ${body}")
+		        	.log("${body}")
+		        .end();
 		}
 
 	}

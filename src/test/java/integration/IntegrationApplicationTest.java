@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import com.google.common.collect.ImmutableMap;
 
 import integration.persistence.PersistenceService;
 
@@ -63,6 +66,15 @@ public class IntegrationApplicationTest {
 
 	@Test
 	public void testPostObjectToDedicatedUrl() throws Exception {
+		// test POST Object to contextPath expect 2xx
+		String path = "/" + contextPath + "/";
+		Object data = ImmutableMap.of("Node",ImmutableMap.of("name", "the name", "id", 123));
+		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
+		assertTrue(response.getStatusCode().is2xxSuccessful());
+	}
+
+	@Test
+	public void testPostStringToDedicatedUrl() throws Exception {
 		// test POST Object to contextPath expect 2xx
 		String path = "/" + contextPath + "/Concept";
 		String data = "{\"id\": 177, \"name\": \"hello \"}";
