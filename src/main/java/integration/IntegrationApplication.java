@@ -75,7 +75,7 @@ public class IntegrationApplication {
 			}
 
 			private Throwable getRootCause(Throwable e) {
-				while (e.getCause() != null) {
+				while (e.getCause() != null && !e.equals(e.getCause())) {
 					e = e.getCause();
 				}
 				return e;
