@@ -88,12 +88,12 @@ public class IntegrationApplication {
 			errorHandler(defaultErrorHandler().maximumRedeliveries(0));
 			
 			onException(Exception.class).handled(true).maximumRedeliveries(0)
-					//.log(LoggingLevel.ERROR, "Failed processing ${body}")
-					//.transform()
-					//.simple("${date:now:yyyy-MM-dd HH:mm:ss}$ ${body}")
-					.transform(body().prepend(Calendar.getInstance().getTime().toGMTString()+"$"))
+					.transform()
+					.simple("${date:now:yyyy-MM-dd HH:mm:ssZ} -- ${body}")
 					.bean(PrepareErrorResponse.class)
 					.multicast().to("{{app.error.log}}").to("log:integration.LOG?level=ERROR")
+					.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
+					.setFaultHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
 					.end();
 
 			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
@@ -101,9 +101,9 @@ public class IntegrationApplication {
 					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
 					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
-			String stagedInput = "seda:input";
-			String persistence = "bean:persistenceService?method=persist(${body})";
-			String remotePersistence = "direct:remote-persistence";
+			final String stagedInput = "seda:input";
+			final String persistence = "bean:persistenceService?method=persist(${body})";
+			final String remotePersistence = "direct:remote-persistence";
 
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 				.post("/")

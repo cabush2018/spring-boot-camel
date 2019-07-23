@@ -68,7 +68,7 @@ public class IntegrationApplicationTest {
 	public void testPostObjectToDedicatedUrl() throws Exception {
 		// test POST Object to contextPath expect 2xx
 		String path = "/" + contextPath + "/";
-		Object data = ImmutableMap.of("Node",ImmutableMap.of("name", "the name", "id", 123));
+		Object data = ImmutableMap.of("Node", ImmutableMap.of("name", "the name", "id", 123));
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
 	}
@@ -86,16 +86,18 @@ public class IntegrationApplicationTest {
 	public void testPostBogusObject() throws Exception {
 		String logLocation = "dgp.error.log";
 		Path appErrorLog = Paths.get(logLocation);
-		Files.walk(appErrorLog).sorted(Comparator.reverseOrder()).map(Path::toFile).peek(System.out::println)
-				.forEach(File::delete);
-		appErrorLog.toFile().delete();
+		if (appErrorLog.toFile().exists()) {
+			Files.walk(appErrorLog).sorted(Comparator.reverseOrder()).map(Path::toFile).peek(System.out::println)
+					.forEach(File::delete);
+			appErrorLog.toFile().delete();
+		}
 		assertFalse(appErrorLog.toFile().exists());
 
 		// test POST Array to contextPath expect 2xx
 		String path = "/" + contextPath + "/all";
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate.postForEntity(path, data, String.class);
-		System.out.println("STATUS CODE:" + response.getStatusCode());
+		assertTrue(response.getStatusCode().isError());
 		assertTrue(appErrorLog.toFile().exists());
 	}
 }
