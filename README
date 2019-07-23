@@ -1,3 +1,5 @@
+sudo tcpdump tcpdump -vvAls0 -i lo|tee traffic.txt|grep 'POST'
+
 -Dspring.config.location = C:\application.properties
 
 
