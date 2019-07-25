@@ -11,6 +11,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
 import org.apache.camel.Message;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -101,38 +102,66 @@ public class IntegrationApplication {
 					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
 					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
-			String stagedInput = "seda:input";
+			String seda = "seda:input";
+			String persistenceRemote = "direct:persistence-remote";
+			String persistence = "direct:persistence";
+			
+			String pipeIn = persistence;
+			
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
-				.post("/")
+
+			.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
 					.route().routeId("direct")
-					.inputType(Map.class).to(stagedInput)
+					.inputType(Map.class)
+					.process(this::process)
+					.to(pipeIn)
 					.endRest()
+				
+				.post("/map")
+					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
+					.route().routeId("direct-map")
+					.inputType(Map.class).to(pipeIn)
+					.endRest()
+			
 				.post("/all")
 					.description(
 							"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
 					.route().routeId("direct-array")
 					.inputType(List.class)
 					.split(body())
-					.to(stagedInput)
+					.to(pipeIn)
 					.endRest()
+					
 				.post("/{type}")
 					.description(
 							"POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
 					.route().routeId("direct-mapped").inputType(Map.class)
 					.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
-					.to(stagedInput);
+					.to(pipeIn);
 
-			from(stagedInput)
+			from(seda)
 				.threads(sizePool).maxQueueSize(sizeQueue)
+				.to(persistenceRemote);
+
+			from(persistenceRemote)
 				.hystrix()
-					.to("bean:persistenceService?method=persist(${body})")
+					.to(persistence)
 	            .onFallback()
 	                .transform().simple("FALLBACK Hystrix ${body}")
 	            	.log("${body}")
 	            .end()
 					;
+
+			from(persistence)
+				.to("bean:persistenceService?method=persist(${body})");
+
 		}
 
+		private void process(Exchange e) {
+			Map<String, Object> inBody=(Map<String, Object>) e.getIn().getBody();
+			Object item=inBody.get("item");
+			e.getOut().setBody(item);
+		}
 	}
 }
