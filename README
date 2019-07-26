@@ -8,6 +8,18 @@ org.apache.camel.jmx.mbeanObjectDomainName=org.apache.camel
 org.apache.camel.jmx.rmiConnector.registryPort=1099
 org.apache.camel.jmx.serviceUrlPath=camel
 
+https://stackoverflow.com/questions/36072243/groovy-object-properties-in-map
+
+def extractProperties(obj) {
+    obj.getClass()
+       .declaredFields
+       .findAll { !it.synthetic }
+       .collectEntries { field ->
+           [field.name, obj."$field.name"]
+       }
+}
+
+*:object.properties
 
 //https://dzone.com/articles/apache-camel-integration
 //public class OrderRouter extends RouteBuilder {
