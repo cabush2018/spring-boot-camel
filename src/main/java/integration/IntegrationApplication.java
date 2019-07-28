@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.print.attribute.standard.MediaSize.Other;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.Exchange;
@@ -82,6 +83,7 @@ public class IntegrationApplication {
 			}
 		}
 
+		@SuppressWarnings("deprecation")
 		@Override
 		public void configure() {
 			
@@ -109,7 +111,12 @@ public class IntegrationApplication {
 				.post("/")
 					.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
 					.route().routeId("direct")
-					.inputType(Map.class).to(stagedInput)
+					.inputType(Map.class)
+					.choice()
+						.when(xpath("payload/item"))
+						.to("")
+					.end()
+					.to(stagedInput)
 					.endRest()
 				.post("/all")
 					.description(
