@@ -9,10 +9,12 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.apache.camel.model.rest.RestBindingMode;
+import org.apache.camel.spi.Policy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -105,24 +109,30 @@ public class IntegrationApplication {
 					.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
 					.setFaultHeader(Exchange.HTTP_RESPONSE_CODE, constant(400)).end();
 
-			restConfiguration().contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
-					.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
-					.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
-					.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
+			
+			restConfiguration()
+				.component("servlet")
+				.contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
+				.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
+				.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
+				//.endpointProperty("handlers", "securityHandler")
+				.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			final String STAGED_INPUT = "seda:input";
 			final String REMOTE_PERSISTENCE = "direct:remote-persistence";
 			final String LOCAL_PERSISTENCE = "direct:local-persistence";
 			final String PERSISTENCE = "bean:persistenceService?method=persist(${body})";
 			
+//			Policy policy = new AuthorizationPolicy() ;
+			
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 					.post("/")
 						.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-						.route().routeId("direct").inputType(Map.class)
-						.choice()
-							.when(xpath("payload/item"))
-								.to("log:integration.LOG?level=INFO")
-							.end()
+						.route().routeId("direct").inputType(Map.class).outputType(Map.class)
+//						.policy(policy)
+//						.filter().simple("${body} contains 'Node'")
+//							.log(LoggingLevel.TRACE, "payload ${body}")
+//							.end()
 						.to(entryProcessing)
 						.endRest()
 					.post("/all")
@@ -147,5 +157,15 @@ public class IntegrationApplication {
 			from(LOCAL_PERSISTENCE).to(PERSISTENCE).end();
 		}
 
+	}
+	
+	@Component
+	public class NettyWebServerFactoryPortCustomizer 
+	  implements WebServerFactoryCustomizer<NettyReactiveWebServerFactory> {
+	 
+	    @Override
+	    public void customize(NettyReactiveWebServerFactory serverFactory) {
+	        serverFactory.setPort(Integer.parseInt(serverPort));
+	    }
 	}
 }
