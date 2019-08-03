@@ -9,12 +9,10 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.apache.camel.spi.Policy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,19 +20,17 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
-import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 /*test with one of
-curl --header 'Content-Type: application/json' --request POST --data '{"id": 1,"name": "hello "}' http://localhost:9080/integration/Concept
-curl --header 'Content-Type: application/json' --request POST --data '{"integration;model;Concept":{"id": 177, "name": "hello "}, "Node":{"id":4,"name":"fnode"}}' http://localhost:9080/integration/
-curl --header 'Content-Type: application/json' --request POST --data '[{"integration;model;Concept":{"id": 177, "name": "hello "}}, {"Node":{"id":4,"name":"fnode"}}]' http://localhost:9080/integration/all
+curl --user username:password --header 'Content-Type: application/json' --request POST --data '{"id": 1,"name": "hello "}' http://localhost:9080/integration/Concept
+curl --user username:password --header 'Content-Type: application/json' --request POST --data '{"integration;model;Concept":{"id": 177, "name": "hello "}, "Node":{"id":4,"name":"fnode"}}' http://localhost:9080/integration/
+curl --user username:password --header 'Content-Type: application/json' --request POST --data '[{"integration;model;Concept":{"id": 177, "name": "hello "}}, {"Node":{"id":4,"name":"fnode"}}]' http://localhost:9080/integration/all
 
-ab -n 1 -c 1 -T 'Content-Type: application/json' -p ./bin/post.array.txt http://localhost:9080/integration/all
+ab --user username:password -n 1 -c 1 -T 'Content-Type: application/json' -p ./bin/post.array.txt http://localhost:9080/integration/all
 
 */
 @SpringBootApplication
@@ -123,16 +119,11 @@ public class IntegrationApplication {
 			final String LOCAL_PERSISTENCE = "direct:local-persistence";
 			final String PERSISTENCE = "bean:persistenceService?method=persist(${body})";
 			
-//			Policy policy = new AuthorizationPolicy() ;
 			
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 					.post("/")
 						.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-						.route().routeId("direct").inputType(Map.class).outputType(Map.class)
-//						.policy(policy)
-//						.filter().simple("${body} contains 'Node'")
-//							.log(LoggingLevel.TRACE, "payload ${body}")
-//							.end()
+						.route().routeId("direct").inputType(Map.class)
 						.to(entryProcessing)
 						.endRest()
 					.post("/all")
@@ -142,30 +133,15 @@ public class IntegrationApplication {
 						.split(body())
 						.to(entryProcessing)
 						.endRest()
-					.post("/{type}")
-						.description(
-								"POST an entity of dynamic {type}, to be persistCalendar.getInstance().getTime().toGMTString()+\"$\"ed according to its JPA mappings.")
-						.route().routeId("direct-mapped").inputType(Map.class)
-						.to("bean:integrationConverter?method=toPersistent(${header.type},${body})")
-						.to(entryProcessing);
+						;
 
-			from(STAGED_INPUT).threads(sizePool).maxQueueSize(sizeQueue).to(REMOTE_PERSISTENCE);
+			from(STAGED_INPUT).routeId("seda").threads(sizePool).maxQueueSize(sizeQueue).to(REMOTE_PERSISTENCE);
 
-			from(REMOTE_PERSISTENCE).hystrix().to(LOCAL_PERSISTENCE).onFallback().transform()
+			from(REMOTE_PERSISTENCE).routeId("remote-persistence").hystrix().to(LOCAL_PERSISTENCE).onFallback().transform()
 					.simple("FALLBACK Hystrix ${body}").log("${body}").end();
 
-			from(LOCAL_PERSISTENCE).to(PERSISTENCE).end();
+			from(LOCAL_PERSISTENCE).routeId("local-persistence").to(PERSISTENCE).end();
 		}
 
-	}
-	
-	@Component
-	public class NettyWebServerFactoryPortCustomizer 
-	  implements WebServerFactoryCustomizer<NettyReactiveWebServerFactory> {
-	 
-	    @Override
-	    public void customize(NettyReactiveWebServerFactory serverFactory) {
-	        serverFactory.setPort(Integer.parseInt(serverPort));
-	    }
 	}
 }

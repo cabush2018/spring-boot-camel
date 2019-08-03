@@ -17,7 +17,8 @@
 
 	<properties>
 		<camel.version>2.24.1</camel.version>
-	</properties>
+<!-- 		<camel.version>2.15.2</camel.version>
+ -->	</properties>
 
 	<dependencies>
 		<!-- miscellaneous -->
@@ -44,11 +45,11 @@
 		</dependency>
 
 		<!-- spring-boot -->
-<!-- 		<dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
- -->		<dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 		</dependency>
@@ -58,13 +59,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<!-- ...with jetty -->
 		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-web</artifactId> 
 			<exclusions> <exclusion> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-tomcat</artifactId> 
 			</exclusion> </exclusions> </dependency> <dependency> <groupId>org.springframework.boot</groupId> 
-			<artifactId>spring-boot-starter-jetty</artifactId> </dependency> -->
-		<!-- ...with netty -->
+			<artifactId>spring-boot-starter-jetty</artifactId> </dependency> -->		<!-- ...with netty -->
 		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-webflux</artifactId> 
 			</dependency> -->
 
@@ -72,13 +71,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+
+		<!-- Camel -->
 		<dependency>
 			<groupId>org.apache.camel</groupId>
 			<artifactId>camel-spring-boot-starter</artifactId>
 			<version>${camel.version}</version>
 		</dependency>
-
-		<!-- Camel -->
 		<dependency>
 			<groupId>org.apache.camel</groupId>
 			<artifactId>camel-servlet-starter</artifactId>
