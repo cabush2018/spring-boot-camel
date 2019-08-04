@@ -111,7 +111,6 @@ public class IntegrationApplication {
 				.contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
 				.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
 				.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
-				//.endpointProperty("handlers", "securityHandler")
 				.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			final String STAGED_INPUT = "seda:input";
@@ -130,7 +129,7 @@ public class IntegrationApplication {
 						.description(
 								"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
 						.route().routeId("direct-array").inputType(List.class)
-						.split(body())
+					//	.split(body())
 						.to(entryProcessing)
 						.endRest()
 						;

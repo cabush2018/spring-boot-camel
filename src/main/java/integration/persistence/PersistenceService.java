@@ -16,20 +16,14 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import integration.IntegrationConverter;
-import lombok.Setter;
 
 @Service
 @Transactional
-@ConfigurationProperties(prefix = "app")
 public class PersistenceService {
-
-	@Setter
-	private Map<String, Map<?, ?>> mappings;
 
 	@Value("${app.unmapped-entities:true}")
 	private boolean processUnmapped;
