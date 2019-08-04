@@ -6,10 +6,8 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
-import lombok.ToString;
 
 @Getter 
-@ToString 
 @Builder
 public class PersistNode {
 

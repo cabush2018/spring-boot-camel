@@ -95,10 +95,6 @@ public class IntegrationApplication {
 
 			errorHandler(defaultErrorHandler().maximumRedeliveries(0));
 
-			onException(org.apache.camel.CamelAuthorizationException.class).handled(true)
-					.transform(simple("Access Denied with the Policy of ${exception.policyId} !"))
-					.setHeader(Exchange.HTTP_RESPONSE_CODE, simple("401"));
-			
 			onException(Exception.class).handled(true).maximumRedeliveries(0).transform()
 					.simple("${date:now:yyyy-MM-dd HH:mm:ssZ} -- ${body}").bean(PrepareErrorResponse.class).multicast()
 					.to("{{app.error.log}}").to("log:integration.LOG?level=ERROR")
