@@ -36,13 +36,6 @@ public class IntegrationApplicationTest {
     
 	String base="";
 	
-	@LocalServerPort int port;
- 
-	@Before
-	public void setup() {
-		base="http://localhost:"+port;
-	}
-	
 	@Test
 	public void testPostMapOfMappedJPAAndUnmappedNode() throws Exception {
 		// test POST Map to contextPath expect 2xx
