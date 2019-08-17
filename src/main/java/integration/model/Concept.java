@@ -12,8 +12,9 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@DynamicUpdate
-@Getter @Setter @ToString
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 public class Concept {
 	@Id

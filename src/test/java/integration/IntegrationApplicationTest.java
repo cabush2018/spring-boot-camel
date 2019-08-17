@@ -1,9 +1,6 @@
 package integration;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -11,9 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.UUID;
 
-import org.hamcrest.core.IsNot;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +17,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import integration.model.Actor;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev")
+@DirtiesContext
 public class IntegrationApplicationTest {
 
 	@Autowired
@@ -69,21 +64,6 @@ public class IntegrationApplicationTest {
 				String.class);
 		assertTrue(response.getStatusCode().is4xxClientError());
 		System.out.println(response);
-	}
-
-	@Test
-	public void testActorNoId() {
-		Actor actor = Actor.builder().name("charlie chaplin").sourceId(UUID.randomUUID().toString()).build();
-		actor.init();
-		assertThat(actor.getId(), notNullValue());
-
-		String path = "/" + contextPath + "/all";
-		Actor[] data = {actor};
-		ResponseEntity<?> response = restTemplate.withBasicAuth("username", "password")
-				.postForEntity(path, data, String.class);
-		assertTrue(response.getStatusCode().is2xxSuccessful());
-		System.out.println(response);
-
 	}
 
 	@Test

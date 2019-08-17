@@ -1,7 +1,6 @@
 package integration;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -14,11 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -30,8 +28,7 @@ import integration.model.Actor;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Configuration
-@ComponentScan
+@DirtiesContext
 public class ActorTest {
 
 	@Autowired
@@ -48,14 +45,12 @@ public class ActorTest {
 	@Test
 	public void testActorNoId() {
 		String uuid = UUID.randomUUID().toString();
-		Actor object = Actor.builder().name("charlie chaplin").sourceId(uuid).build();
-		object.init();
+		Actor object = new Actor(uuid, null,"charlie chaplin");
 		String path = "/" + contextPath + "/all";
 		Object[] data = { ImmutableMap.of(
 				String.format("%s;%s", object.getClass().getPackage().getName(), object.getClass().getSimpleName()),
 				object) };
 
-		assertThat(object.getId(), notNullValue());
 		assertThat(actorRepository.findBySourceId(uuid).isPresent(), is(false));
 
 		ResponseEntity<?> response = restTemplate.withBasicAuth("username", "password").postForEntity(path, data,
@@ -68,14 +63,12 @@ public class ActorTest {
 	public void testActorHavingId() {
 		String uuid = UUID.randomUUID().toString();
 		int id = (int) (Integer.MAX_VALUE * Math.random());
-		Actor object = Actor.builder().name("groucho marx").sourceId(uuid).id(id).build();
-		object.init();
+		Actor object = new Actor(uuid, id,"groucho marx");
 		String path = "/" + contextPath + "/all";
 		Object[] data = { ImmutableMap.of(
 				String.format("%s;%s", object.getClass().getPackage().getName(), object.getClass().getSimpleName()),
 				object) };
 
-		assertThat(object.getId(), notNullValue());
 		assertThat(actorRepository.findById(id).isPresent(), is(false));
 
 		ResponseEntity<?> response = restTemplate.withBasicAuth("username", "password").postForEntity(path, data,

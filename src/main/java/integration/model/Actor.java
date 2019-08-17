@@ -1,43 +1,35 @@
 package integration.model;
 
-import javax.annotation.PostConstruct;
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.Id;
-
-import org.hibernate.annotations.DynamicUpdate;
+import javax.persistence.PersistenceException;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@DynamicUpdate
-@Getter @Setter @ToString
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Actor {
-	
+@EntityListeners({IdListener.class})
+public class Actor extends AbstractAsset {
+
 	@Id
 	@Column(name = "source_id")
-	private String sourceId;
-	
-	@Column(name="actor_id")
-	private Integer id;
-	
+	protected String sourceId;
+
+	@Column(name = "actor_id")
+	protected Integer id;
+
 	private String name;
-	
-	@PostConstruct
-	public void init() {
-		if(id==null) {
-			if(sourceId==null) {
-				throw new RuntimeException("invalid");
-			}
-			id=sourceId.hashCode();
-		}
-	}
+
 }
