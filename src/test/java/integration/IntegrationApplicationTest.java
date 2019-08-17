@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -34,12 +32,10 @@ public class IntegrationApplicationTest {
 	@Value("${integration.api.path}")
 	private String contextPath;
     
-	String base="";
-	
 	@Test
 	public void testPostMapOfMappedJPAAndUnmappedNode() throws Exception {
 		// test POST Map to contextPath expect 2xx
-		String path = base +"/"+ contextPath + "/";
+		String path = "/"+ contextPath + "/";
 		String data = "{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}, \"Node\":{\"id\":4,\"name\":\"fnode\",\"active\":false}}";
 		ResponseEntity<?> response = restTemplate
 				.withBasicAuth("username", "password")
@@ -51,7 +47,7 @@ public class IntegrationApplicationTest {
 	@Test
 	public void testPostArrayOfMappedJPAAndUnmappedNode() throws Exception {
 		// test POST Array to contextPath expect 2xx
-		String path = base +"/"+ contextPath + "/all";
+		String path = "/"+ contextPath + "/all";
 		String data = "[{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate
 				.withBasicAuth("username", "password")
@@ -63,7 +59,7 @@ public class IntegrationApplicationTest {
 	@Test
 	public void testPostArrayOfMappedJPAAndUnmappedNodeFailAuthn() throws Exception {
 		// test POST Array to contextPath expect 2xx
-		String path = base +"/"+ contextPath + "/all";
+		String path = "/"+ contextPath + "/all";
 		String data = "[{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate
 				.withBasicAuth("username", "wrong-password")
@@ -84,7 +80,7 @@ public class IntegrationApplicationTest {
 		assertFalse(appErrorLog.toFile().exists());
 
 		// test POST Array to contextPath expect 2xx
-		String path = base +"/"+ contextPath + "/all";
+		String path = "/"+ contextPath + "/all";
 		String data = "[1234{\"integration;model;Concept\":{\"id\": 177, \"name\": \"hello \"}}, {\"Node\":{\"id\":4,\"name\":\"fnode\",\"since\":\"2019-01-01\",\"active\":true,\"size\":123.456}}]";
 		ResponseEntity<?> response = restTemplate
 				.withBasicAuth("username", "password")
