@@ -1,6 +1,5 @@
 package integration;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,8 +30,7 @@ public class IntegrationConverter implements TypeConverters {
 		}
 
 	@SneakyThrows
-	public Object toPersistent(String entity, Map<String, Object> properties)
-			throws InstantiationException, IllegalAccessException, ClassNotFoundException, InvocationTargetException {
+	public Object toPersistent(String entity, Map<String, Object> properties) {
 		final String[] location=entity.split("\\s|\\-|\\:|\\;|,|\\^|\\&|\\%|\\$|\\#|\\@|\\!");
 		Object obj ;
 		if (location.length>1) {

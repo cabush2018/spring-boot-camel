@@ -1,6 +1,5 @@
 package integration.persistence;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Date;
 import java.util.List;
 import java.util.Map;
@@ -15,23 +14,16 @@ import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import integration.IntegrationConverter;
-import lombok.Setter;
 
 @Service
 @Transactional
-@ConfigurationProperties(prefix = "app")
 public class PersistenceService {
-
-	@Setter
-	private Map<String, Map<?, ?>> mappings;
 
 	@Value("${app.unmapped-entities:true}")
 	private boolean processUnmapped;
@@ -66,12 +58,7 @@ public class PersistenceService {
 	}
 
 	public Object persist(@NotBlank String entity, @NotNull Map<String, Object> properties) {
-		try {
-			return this.persist(converter.toPersistent(entity, properties));
-		} catch (IllegalAccessException | InvocationTargetException | InstantiationException
-				| ClassNotFoundException e) {
-			throw new ConversionException(e);
-		}
+		return this.persist(converter.toPersistent(entity, properties));
 	}
 
 	@Cacheable

@@ -4,16 +4,17 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import org.hibernate.annotations.DynamicUpdate;
+
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
-@Data
+@DynamicUpdate
+@Getter @Setter @ToString
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Concept {
 	@Id
 	@GeneratedValue
