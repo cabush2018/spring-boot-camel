@@ -29,3 +29,6 @@ app:
       table: AnotherTable
       a1: col1
       a2: col2
+    Actor:
+      sourceId: source_id
+      id: actor_id
