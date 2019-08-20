@@ -43,6 +43,51 @@
 			<artifactId>javax.interceptor-api</artifactId>
 			<version>1.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+		</dependency>
+
+		<!-- spring-aspects -->
+		<!-- This required by aspectj-maven-plugin, to compile and weave aspect. 
+			http://mojo.codehaus.org/aspectj-maven-plugin/ -->
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjrt</artifactId>
+			<!-- <version>${aspectj.version}</version> -->
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+		</dependency>
+		<!-- This module required by spring-aspects module -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-tx</artifactId>
+		</dependency>
+<!-- 		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+		</dependency>
+ -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+			<!-- <version>4.0.1.RELEASE</version> -->
+		</dependency>
 
 		<!-- spring-boot -->
 		<dependency>
@@ -143,8 +188,8 @@
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy-all</artifactId>
 			<version>2.4.7</version>
-			<scope>test</scope>
-		</dependency>
+<!-- 			<scope>test</scope>
+ -->		</dependency>
 		<dependency>
 			<groupId>org.spockframework</groupId>
 			<artifactId>spock-core</artifactId>
@@ -201,6 +246,98 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+<!-- 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>aspectj-maven-plugin</artifactId>
+				<version>1.10</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.aspectj</groupId>
+						<artifactId>aspectjtools</artifactId>
+						<version>${aspectj.version}</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>test-compile</id>
+						<goals>
+							<goal>test-compile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<complianceLevel>${java.version}</complianceLevel>
+					Add aspect libraries,
+					which is contain aspects to be weaven into @Configurable annotated beans
+					on compile time by this plugin.
+					<aspectLibraries>
+						<aspectLibrary>
+							<groupId>org.springframework</groupId>
+							<artifactId>spring-aspects</artifactId>
+						</aspectLibrary>
+					</aspectLibraries>
+				</configuration>
+			</plugin>
+ -->			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>aspectj-maven-plugin</artifactId>
+				<version>1.10</version>
+				<configuration>
+					<verbose>true</verbose>
+					<showWeaveInfo>true</showWeaveInfo>
+					<source>1.8</source>
+					<target>1.8</target>
+					<complianceLevel>1.8</complianceLevel>
+					<!-- <encoding>UTF-8</encoding> -->
+					<verbose>false</verbose>
+					<Xlint>ignore</Xlint>
+					<outxml>true</outxml>
+					<forceAjcCompile>true</forceAjcCompile>
+					<reweavable>false</reweavable>
+<!-- 					<aspectLibraries>
+						<aspectLibrary>
+							<groupId>com.aspectj.library.yours</groupId>
+							<artifactId>your-library</artifactId>
+						</aspectLibrary>
+					</aspectLibraries>
+ -->					<!-- this is important: start -->
+					<sources />
+					<weaveDirectories>
+						<weaveDirectory>${project.build.directory}/classes</weaveDirectory>
+					</weaveDirectories>
+					<!-- this is important: end -->
+				</configuration>
+				<executions>
+					<execution>
+						<!-- The right phase is very important! Compile and weave aspects after 
+							all classes compiled by javac -->
+						<phase>process-classes</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.aspectj</groupId>
+						<artifactId>aspectjweaver</artifactId>
+ 						<version>1.9.2</version>
+<!-- 						<version>1.8.9</version>
+ -->					</dependency>
+					<dependency>
+						<groupId>org.aspectj</groupId>
+						<artifactId>aspectjtools</artifactId>
+ 						<version>1.9.2</version>
+<!-- 						<version>1.8.9</version>
+ -->					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>

@@ -46,18 +46,18 @@ public class PersistenceService {
 		} else if (in instanceof List) {
 			((List) in).stream().map(converter::toPersistNode).forEach(this::persist);
 		} else if (in instanceof Map) {
-			((Map<String, Map<String, Object>>) in).entrySet().stream().forEach(this::persistEntry);
+			((Map<String, Map<String, String>>) in).entrySet().stream().forEach(this::persistEntry);
 		} else {
 			throw new TypeNotPresentException(in.getClass().getCanonicalName(), null);
 		}
 		return in;
 	}
 
-	public Object persistEntry(@NotNull Map.Entry<String, Map<String, Object>> e) {
+	public Object persistEntry(@NotNull Map.Entry<String, Map<String, String>> e) {
 		return this.persist(e.getKey(), e.getValue());
 	}
 
-	public Object persist(@NotBlank String entity, @NotNull Map<String, Object> properties) {
+	public Object persist(@NotBlank String entity, @NotNull Map<String, String> properties) {
 		return this.persist(converter.toPersistent(entity, properties));
 	}
 
@@ -74,20 +74,20 @@ public class PersistenceService {
 		return em.merge(in);
 	}
 
-	private boolean insert(PersistNode in) {
-		Set<Entry<String, Object>> inSet = in.getProperties().entrySet();
-		String columns = inSet.stream().map(Map.Entry<String, Object>::getKey).collect(Collectors.joining(","));
+	public boolean insert(PersistNode in) {
+		Set<Entry<String, String>> inSet = in.getProperties().entrySet();
+		String columns = inSet.stream().map(Map.Entry<String, String>::getKey).collect(Collectors.joining(","));
 		String values = inSet.stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
 				.collect(Collectors.joining(","));
 		return executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values)) > 0;
 	}
 
-	private boolean update(PersistNode in) {
-		Set<Entry<String, Object>> inSet = in.getProperties().entrySet();
+	public boolean update(PersistNode in) {
+		Set<Entry<String, String>> inSet = in.getProperties().entrySet();
 		String pairs = inSet.stream()
 				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
 				.collect(Collectors.joining(","));
-		String id = inSet.stream().filter((Map.Entry<String, Object> e) -> "id".equalsIgnoreCase(e.getKey()))
+		String id = inSet.stream().filter((Map.Entry<String, String> e) -> "id".equalsIgnoreCase(e.getKey()))
 				.findFirst().map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
 		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
 	}

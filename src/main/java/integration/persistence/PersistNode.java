@@ -14,6 +14,6 @@ public class PersistNode {
 	private String type;
 	
 	@Default
-	private Map<String, Object> properties = new HashMap<>();
+	private Map<String, String> properties = new HashMap<>();
 
 }

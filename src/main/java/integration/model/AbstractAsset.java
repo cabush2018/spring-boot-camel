@@ -1,5 +1,6 @@
 package integration.model;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.UUID;
 
@@ -7,7 +8,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class AbstractAsset {
+public abstract class AbstractAsset implements Serializable{
 
 	public static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
 	public static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);

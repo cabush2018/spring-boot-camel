@@ -1,12 +1,9 @@
 package integration.model;
 
-import java.util.UUID;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
 import javax.persistence.Id;
-import javax.persistence.PersistenceException;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,13 +11,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-@Entity
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners({IdListener.class})
+@Entity
+@EntityListeners({ AuditListener.class, IdListener.class })
 public class Actor extends AbstractAsset {
 
 	@Id
@@ -30,6 +27,6 @@ public class Actor extends AbstractAsset {
 	@Column(name = "actor_id")
 	protected Integer id;
 
-	private String name;
+	protected String name;
 
 }

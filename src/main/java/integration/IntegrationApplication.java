@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 /*test with one of
@@ -36,6 +37,7 @@ ab --user username:password -n 1 -c 1 -T 'Content-Type: application/json' -p ./b
 @SpringBootApplication
 @EnableConfigurationProperties
 @EnableCaching
+@ComponentScan
 @EntityScan(basePackages = { "integration.model" })
 public class IntegrationApplication {
 	@Value("${server.port}")
