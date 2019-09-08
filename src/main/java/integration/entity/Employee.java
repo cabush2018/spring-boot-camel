@@ -11,6 +11,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import integration.model.AbstractAsset;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,10 +21,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name="employee")
 @NamedQuery(name="Employee.findAll", query="SELECT e FROM Employee e")
-public class Employee implements Serializable {
+public class Employee extends AbstractAsset implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id

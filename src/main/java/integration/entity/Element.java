@@ -10,6 +10,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import integration.model.AbstractAsset;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,10 +20,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name="element")
 @NamedQuery(name="Element.findAll", query="SELECT e FROM Element e")
-public class Element implements Serializable {
+public class Element extends AbstractAsset implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id

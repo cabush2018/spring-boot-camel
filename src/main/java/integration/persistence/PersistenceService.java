@@ -1,6 +1,7 @@
 package integration.persistence;
 
 import java.sql.Date;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,6 +21,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import integration.IntegrationConverter;
+import integration.model.AbstractAsset;
+import integration.model.RelationsListener;
 
 @Service
 @Transactional
@@ -63,15 +66,29 @@ public class PersistenceService {
 
 	@Cacheable
 	public final boolean isMapped(Class<?> clazz) {
-		return em.getMetamodel().getEntities().parallelStream().map(EntityType::getJavaType).anyMatch(clazz::equals);
+		List<Class<?>> mapped = em.getMetamodel().getEntities().parallelStream().map(EntityType::getJavaType).collect(Collectors.toList());
+		return mapped.stream()
+				.anyMatch(clazz::equals);
 	}
 
 	private Object persistUnmapped(PersistNode in) {
 		return update(in) || insert(in) ? in : null;
 	}
 
+	@Autowired
+	RelationsListener relationsListener;
+
 	private Object persistMapped(Object in) {
-		return em.merge(in);
+		List<Map<String, Object>> relations=Collections.emptyList();
+		if (in instanceof AbstractAsset) {
+			relations = ((AbstractAsset) in).getRelations();
+		}
+		em.merge(in);
+		if (in instanceof AbstractAsset) {
+			((AbstractAsset) in).setRelations(relations);
+			relationsListener.persistRelations((AbstractAsset)in);
+		}
+		return in;
 	}
 
 	public boolean insert(PersistNode in) {

@@ -71,7 +71,7 @@ public class AuditListener {
 
 
 		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-			logger.error("Error while preparing audit:", e);
+			logger.error("Error while preparing audit:", e.getMessage());
 		}
 	}
 
