@@ -38,7 +38,7 @@ ab --user username:password -n 1 -c 1 -T 'Content-Type: application/json' -p ./b
 @EnableConfigurationProperties
 @EnableCaching
 @ComponentScan
-@EntityScan(basePackages = { "integration.model" })
+@EntityScan(basePackages = { "integration" })
 public class IntegrationApplication {
 	@Value("${server.port}")
 	String serverPort;
