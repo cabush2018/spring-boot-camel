@@ -30,7 +30,7 @@ public class IntegrationConverter implements TypeConverters {
 		}
 
 	@SneakyThrows
-	public Object toPersistent(String entity, Map<String, String> map) {
+	public Object toPersistent(String entity, Map<String, ?> map) {
 		final String[] location=entity.split("\\s|\\-|\\:|\\;|,|\\^|\\&|\\%|\\$|\\#|\\@|\\!");
 		Object obj ;
 		if (location.length>1) {

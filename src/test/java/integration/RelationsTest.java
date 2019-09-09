@@ -2,6 +2,7 @@ package integration;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.Test;
@@ -49,13 +50,17 @@ public class RelationsTest {
 
 	@Test
 	public void testRelations() {
-		final String path = "/" + contextPath + "/all";
+		final String path = "/" + contextPath + "/map";
 
 		Element e1 = Element.builder().idelement(1).name("element_1").build();
+		Asset a1 = Asset.builder().idasset(123).name("asset_123").build();
 		Part p1 =Part.builder().idpart(1).name("part_1").build();
-		Object[] data = { 
+		Object data =  
 			ImmutableMap.of(
-//				String.format("%s;%s", p1.getClass().getPackage().getName(), p1.getClass().getSimpleName()), p1, 
+				String.format("%s;%s", a1.getClass().getPackage().getName(), a1.getClass().getSimpleName()), 
+					ImmutableMap.of(
+						"idasset", 123,
+						"name", "asset_123"), 
 				String.format("%s;%s", e1.getClass().getPackage().getName(), e1.getClass().getSimpleName()),
 					ImmutableMap.of(
 						"idelement", 1,
@@ -64,18 +69,17 @@ public class RelationsTest {
 								ImmutableMap.of(						
 									"id",123,
 									"target", ImmutableMap.of(
-												"id",1,
-												"type","integration.entity;Part"),
+												"id",123,
+												"type","integration.entity;Asset"),
 									"source",ImmutableMap.of(
 											"id",1,
-											"type","integration.entity;Part")
+											"type","integration.entity;Element")
 								)
 						  }
 					)
-			) 
-		};
+			);
 		ResponseEntity<?> response = restTemplate.withBasicAuth("username", "password").postForEntity(path, data,
-				clazz);
+				Map.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
 	}
 }

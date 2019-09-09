@@ -49,8 +49,6 @@ public class RelationsListener {
 		Map sourceProps = (Map) SOURCE_PROPS.getValue(context);
 		Map targetProps = (Map) TARGET_PROPS.getValue(context);
 
-		EntityManager em = IntegrationUtils.getBean(EntityManager.class);
-
 		ps.persist(targetType,targetProps);
 		
 	}

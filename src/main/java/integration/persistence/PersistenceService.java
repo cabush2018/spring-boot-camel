@@ -49,18 +49,18 @@ public class PersistenceService {
 		} else if (in instanceof List) {
 			((List) in).stream().map(converter::toPersistNode).forEach(this::persist);
 		} else if (in instanceof Map) {
-			((Map<String, Map<String, String>>) in).entrySet().stream().forEach(this::persistEntry);
+			((Map<String, Map<String, ?>>) in).entrySet().stream().forEach(this::persistEntry);
 		} else {
 			throw new TypeNotPresentException(in.getClass().getCanonicalName(), null);
 		}
 		return in;
 	}
 
-	public Object persistEntry(@NotNull Map.Entry<String, Map<String, String>> e) {
+	public Object persistEntry(@NotNull Map.Entry<String, Map<String, ?>> e) {
 		return this.persist(e.getKey(), e.getValue());
 	}
 
-	public Object persist(@NotBlank String entity, @NotNull Map<String, String> properties) {
+	public Object persist(@NotBlank String entity, @NotNull Map<String, ?> properties) {
 		return this.persist(converter.toPersistent(entity, properties));
 	}
 
