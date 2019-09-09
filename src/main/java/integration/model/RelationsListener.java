@@ -3,10 +3,8 @@ package integration.model;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
 import javax.persistence.PrePersist;
 
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Streams;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -39,7 +37,7 @@ public class RelationsListener {
 
 	@SuppressWarnings({ "unchecked", "unused", "rawtypes" })
 	private void persistRelation(Map<String, Object> relation) {
-		PersistenceService ps = IntegrationUtils.getBean(PersistenceService.class);
+		PersistenceService persistenceService = IntegrationUtils.getBean(PersistenceService.class);
 		EvaluationContext context = new StandardEvaluationContext(relation);
 		Object id = ID.getValue(context);
 		Object sourceId = SOURCE_ID.getValue(context);
@@ -49,7 +47,7 @@ public class RelationsListener {
 		Map sourceProps = (Map) SOURCE_PROPS.getValue(context);
 		Map targetProps = (Map) TARGET_PROPS.getValue(context);
 
-		ps.persist(targetType,targetProps);
+		persistenceService.persist(targetType,targetProps);
 		
 	}
 
