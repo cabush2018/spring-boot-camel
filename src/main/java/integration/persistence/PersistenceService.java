@@ -4,8 +4,6 @@ import java.sql.Date;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -72,7 +70,8 @@ public class PersistenceService {
 	}
 
 	private Object persistUnmapped(PersistNode in) {
-		return update(in) || insert(in) ? in : null;
+//		return update(in) || insert(in) ? in : null;
+		return in;
 	}
 
 	@Autowired
@@ -90,24 +89,24 @@ public class PersistenceService {
 		}
 		return in;
 	}
-
-	public boolean insert(PersistNode in) {
-		Set<Entry<String, String>> inSet = in.getProperties().entrySet();
-		String columns = inSet.stream().map(Map.Entry<String, String>::getKey).collect(Collectors.joining(","));
-		String values = inSet.stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
-				.collect(Collectors.joining(","));
-		return executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values)) > 0;
-	}
-
-	public boolean update(PersistNode in) {
-		Set<Entry<String, String>> inSet = in.getProperties().entrySet();
-		String pairs = inSet.stream()
-				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
-				.collect(Collectors.joining(","));
-		String id = inSet.stream().filter((Map.Entry<String, String> e) -> "id".equalsIgnoreCase(e.getKey()))
-				.findFirst().map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
-		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
-	}
+//
+//	public boolean insert(PersistNode in) {
+//		Set<Entry<String, ?>> inSet = in.getProperties().entrySet();
+//		String columns = inSet.stream().map(Map.Entry<String, ?>::getKey).collect(Collectors.joining(","));
+//		String values = inSet.stream().map((Map.Entry<?, ?> e) -> formatSql(e.getValue()))
+//				.collect(Collectors.joining(","));
+//		return executeQuery(String.format("INSERT INTO %s (%s) VALUES ( %s )", in.getType(), columns, values)) > 0;
+//	}
+//
+//	public boolean update(PersistNode in) {
+//		Set<Entry<String, String>> inSet = in.getProperties().entrySet();
+//		String pairs = inSet.stream()
+//				.map((Map.Entry<?, ?> e) -> String.format(" %s = %s", e.getKey(), formatSql(e.getValue())))
+//				.collect(Collectors.joining(","));
+//		String id = inSet.stream().filter((Map.Entry<String, String> e) -> "id".equalsIgnoreCase(e.getKey()))
+//				.findFirst().map((Map.Entry<?, ?> e) -> "id = " + e.getValue()).orElseThrow(RuntimeException::new);
+//		return executeQuery(String.format("UPDATE %s SET %s WHERE %s", in.getType(), pairs, id)) > 0;
+//	}
 
 	private int executeQuery(String sql) {
 		return em.createNativeQuery(sql).executeUpdate();

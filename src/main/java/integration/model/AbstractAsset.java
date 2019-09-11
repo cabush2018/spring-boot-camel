@@ -34,6 +34,7 @@ import lombok.SneakyThrows;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class AbstractAsset implements Serializable {
 
+	private static final long serialVersionUID = 1L;
 	public static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
 	public static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
 
