@@ -17,7 +17,8 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@EntityListeners({ AuditListener.class, IdListener.class })
+@EntityListeners({ IdListener.class })
+//@EntityListeners({ AuditListener.class, IdListener.class })
 public class Actor extends AbstractAsset {
 
 	@Id

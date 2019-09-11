@@ -69,14 +69,9 @@ public class AuditListener {
 			PersistenceService persistence = IntegrationUtils.getBean(PersistenceService.class);
 			persistence.persist(PersistNode.builder().type(clazz.getSimpleName().toLowerCase() + "_audit").properties(props).build());
 
-//			Object audit = clazzAudit.newInstance();
-//			BeanUtils.copyProperties(audit, asset);
-//			BeanUtils.setProperty(audit, "operation", op.getValue());
-//			BeanUtils.setProperty(audit, "createdOn", Calendar.getInstance().getTime());
-//			BeanUtils.setProperty(audit, "createdBy", "bridge");
-//			em.merge(audit);
+
 		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-			logger.error("Error while preparing audit:", e);
+			logger.error("Error while preparing audit:", e.getMessage());
 		}
 	}
 

@@ -38,7 +38,7 @@ ab --user username:password -n 1 -c 1 -T 'Content-Type: application/json' -p ./b
 @EnableConfigurationProperties
 @EnableCaching
 @ComponentScan
-@EntityScan(basePackages = { "integration.model" })
+@EntityScan(basePackages = { "integration" })
 public class IntegrationApplication {
 	@Value("${server.port}")
 	String serverPort;
@@ -87,7 +87,7 @@ public class IntegrationApplication {
 				return e;
 			}
 		}
-				
+
 		@Value("${app.processing.entry:seda:input}")
 		String entryProcessing;
 
@@ -103,39 +103,40 @@ public class IntegrationApplication {
 					.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
 					.setFaultHeader(Exchange.HTTP_RESPONSE_CODE, constant(400)).end();
 
-			
-			restConfiguration()
-				.component("servlet")
-				.contextPath(contextPath).port(serverPort).enableCORS(true).apiContextPath("/api-doc")
-				.apiProperty("api.title", "Integration API").apiProperty("api.version", "v1")
-				.apiProperty("cors", "true").apiContextRouteId("doc-api").component("servlet")
-				.bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
+			restConfiguration().component("servlet").contextPath(contextPath).port(serverPort).enableCORS(true)
+					.apiContextPath("/api-doc").apiProperty("api.title", "Integration API")
+					.apiProperty("api.version", "v1").apiProperty("cors", "true").apiContextRouteId("doc-api")
+					.component("servlet").bindingMode(RestBindingMode.json).dataFormatProperty("prettyPrint", "true");
 
 			final String STAGED_INPUT = "seda:input";
 			final String REMOTE_PERSISTENCE = "direct:remote-persistence";
 			final String LOCAL_PERSISTENCE = "direct:local-persistence";
 			final String PERSISTENCE = "bean:persistenceService?method=persist(${body})";
-			
-			
+
 			rest("/").produces(MediaType.APPLICATION_JSON).consumes(MediaType.APPLICATION_JSON).enableCORS(true)
 					.post("/")
 						.description("POST an entity whose mapping state is unknown, with the intent to be persisted.")
-						.route().routeId("direct").inputType(Map.class)
-						.to(entryProcessing)
+						.route().routeId("direct").inputType(Map.class).to(entryProcessing)
 						.endRest()
 					.post("/all")
-						.description(
-								"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
-						.route().routeId("direct-array").inputType(List.class)
-					//	.split(body())
-						.to(entryProcessing)
-						.endRest()
-						;
+					.description(
+							"POST an array of entites whose mapping states is unknown, with the intent to be all persisted.")
+					.route().routeId("direct-array").inputType(List.class)
+					// .split(body())
+					.to(entryProcessing)
+					.endRest()
+					.post("/map")
+					.description(
+							"POST a map of entites whose mapping states is unknown, with the intent to be all persisted.")
+					.route().routeId("direct-map").inputType(Map.class)
+					// .split(body())
+					.to(entryProcessing)
+					.endRest();
 
 			from(STAGED_INPUT).routeId("seda").threads(sizePool).maxQueueSize(sizeQueue).to(REMOTE_PERSISTENCE);
 
-			from(REMOTE_PERSISTENCE).routeId("remote-persistence").hystrix().to(LOCAL_PERSISTENCE).onFallback().transform()
-					.simple("FALLBACK Hystrix ${body}").log("${body}").end();
+			from(REMOTE_PERSISTENCE).routeId("remote-persistence").hystrix().to(LOCAL_PERSISTENCE).onFallback()
+					.transform().simple("FALLBACK Hystrix ${body}").log("${body}").end();
 
 			from(LOCAL_PERSISTENCE).routeId("local-persistence").to(PERSISTENCE).end();
 		}
